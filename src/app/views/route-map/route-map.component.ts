@@ -248,7 +248,13 @@ constructor(
   updateVehicle(update: any) {
     const rId = update.rId || update.routeId || update.id;
     if (!rId) return;
-    
+
+    const entry = this.routes[rId];
+    if (!entry) {
+      console.warn(`[updateVehicle] No route entry for ${rId}, ignoring update`);
+      return;
+    }
+
     let points: number[][] = [];
 
     // Handle encoded polyline update (p or polyline)
@@ -271,20 +277,17 @@ constructor(
     }
 
     if (points.length > 0) {
-      const entry = this.routes[rId];
-      if (entry) {
-        // Append new points to route geometry
-        points.forEach(p => {
-           const last = entry.coords.length > 0 ? entry.coords[entry.coords.length - 1] : null;
-           // Add if empty or different from last
-           if (!last || last[0] !== p[0] || last[1] !== p[1]) {
-             entry.coords.push(p);
-           }
-        });
+      // Append new points to route geometry
+      points.forEach(p => {
+        const last = entry.coords.length > 0 ? entry.coords[entry.coords.length - 1] : null;
+        // Add if empty or different from last
+        if (!last || last[0] !== p[0] || last[1] !== p[1]) {
+          entry.coords.push(p);
+        }
+      });
 
-        // Update map source immediately so the line connects
-        this.routeDrawingService.drawRouteLine(this.map, rId, entry.coords);
-      }
+      // Update map source immediately so the line connects
+      this.routeDrawingService.drawRouteLine(this.map, rId, entry.coords);
 
       // Queue vehicle movements with animation
       points.forEach(p => {
@@ -297,7 +300,7 @@ constructor(
 
       // Update clustering after vehicle movement
       if (this.clusteringEnabled) {
-        setTimeout(() => this.updateClustering(), 100); // Small delay to allow animation
+        setTimeout(() => this.updateClustering(), 100);
       }
     }
   }

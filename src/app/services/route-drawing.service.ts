@@ -53,29 +53,37 @@ constructor(
 
   private parsePolyline(polyStr: string): number[][] {
     if (!polyStr || polyStr.length === 0) return [];
-    
-    const segments = polyStr.split('|').filter((s: string) => s.length > 0);
+
     const collected: [number, number][] = [];
-    
-    segments.forEach((segment: string) => {
-      try {
-        // decode returns [lat, lng]
-        decode(segment).forEach((p: any) => {
-          // Convert to [lng, lat] and validate
-          const val = this.coordinateService.toLngLat([p[1], p[0]]);
-          if (val) {
-            // Avoid duplicates
-            const last = collected.length > 0 ? collected[collected.length - 1] : null;
-            if (!last || last[0] !== val[0] || last[1] !== val[1]) {
-              collected.push(val);
-            }
+
+    try {
+      // Strip characters outside the valid polyline range [0x3F–0x7E].
+      // Bytes below 0x3F (e.g. null bytes from a corrupted SSE stream) cause
+      // the codec to emit premature terminal chunks, producing garbage coordinates.
+      // NOTE: '|' (0x7C) is a valid encoded polyline character — do NOT use it as a separator.
+      const sanitized = polyStr.replace(/[^\x3F-\x7E]/g, '');
+      if (!sanitized) return [];
+
+      // decode returns [lat, lng] — format is always known, no heuristic needed
+      decode(sanitized).forEach((p: any) => {
+        const lat = p[0], lng = p[1];
+        const val = this.coordinateService.validatePolylinePoint(lat, lng);
+        if (!val) {
+          if (Math.abs(lat) > 0.0001 || Math.abs(lng) > 0.0001) {
+            console.warn('[parsePolyline] Filtered suspicious decoded point:', { lat, lng });
           }
-        });
-      } catch (e) {
-        console.error('Error decoding polyline segment:', segment, e);
-      }
-    });
-    
+          return;
+        }
+        // Avoid duplicates
+        const last = collected.length > 0 ? collected[collected.length - 1] : null;
+        if (!last || last[0] !== val[0] || last[1] !== val[1]) {
+          collected.push(val);
+        }
+      });
+    } catch (e) {
+      console.error('Error decoding polyline:', polyStr, e);
+    }
+
     return collected;
   }
 

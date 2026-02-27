@@ -40,8 +40,9 @@ export class CoordinateService {
       return null;
     }
 
-    // Filter out (0,0) as invalid coordinate for this app
-    if (Math.abs(a) < 0.0001 && Math.abs(b) < 0.0001) {
+    // Filter out coordinates near Null Island (0,0) — within ~110km radius
+    // Any real coordinate within 1° of the origin is invalid for this app
+    if (Math.abs(a) < 1.0 && Math.abs(b) < 1.0) {
         return null;
     }
     
@@ -78,6 +79,19 @@ export class CoordinateService {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c;
+  }
+
+  /**
+   * Validate and convert a decoded polyline point to [lng, lat] format.
+   * The @googlemaps/polyline-codec decode() function ALWAYS returns [lat, lng] pairs,
+   * so no heuristic is needed — the swap is deterministic.
+   * Only basic range validation and null-island filtering are applied.
+   */
+  validatePolylinePoint(lat: number, lng: number): [number, number] | null {
+    if (!isFinite(lat) || !isFinite(lng)) return null;
+    if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+    if (Math.abs(lat) < 1.0 && Math.abs(lng) < 1.0) return null;
+    return [lng, lat];
   }
 
   /**

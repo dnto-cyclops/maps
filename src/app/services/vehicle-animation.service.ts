@@ -22,13 +22,46 @@ export class VehicleAnimationService {
 
     if (!routeEntry.vehicleQueue) routeEntry.vehicleQueue = [];
 
+    // Validate coordinate format: targetPos should be [lng, lat]
+    // Valid ranges: lng [-180, 180], lat [-90, 90]
+    const [lng, lat] = targetPos;
+
+    // Basic validation: reject coordinates outside valid range
+    if (Math.abs(lng) > 180 || Math.abs(lat) > 90) {
+      console.warn(`[VehicleAnimation] Invalid coordinate range for route ${rId}:`, { lng, lat });
+      return;
+    }
+
+    // Diagnostic: warn if coordinates are near Null Island (0,0) within 1° radius
+    // This uses the correct [lng, lat] format
+    if (Math.abs(lng) < 1.0 && Math.abs(lat) < 1.0) {
+      console.warn(`[VehicleAnimation] Suspicious Null Island coordinate for route ${rId}:`, targetPos);
+      return; // Reject Null Island coordinates
+    }
+
     // Check if targetPos is significantly different from the last queued position or current position
     const lastPos = routeEntry.vehicleQueue.length > 0
       ? routeEntry.vehicleQueue[routeEntry.vehicleQueue.length - 1]
       : (routeEntry.currentVehiclePos || null);
 
-    if (lastPos && !this.coordinateService.isSignificantlyDifferent(targetPos, lastPos)) {
-      return;
+    if (lastPos) {
+      if (!this.coordinateService.isSignificantlyDifferent(targetPos, lastPos)) {
+        return;
+      }
+      // Reject teleportation: discard positions more than 10° away (~1100 km) from
+      // the last known position. This is a sanity check to catch obvious coordinate errors
+      // while allowing normal vehicle movements.
+      const dx = Math.abs(targetPos[0] - lastPos[0]);
+      const dy = Math.abs(targetPos[1] - lastPos[1]);
+      if (dx > 10.0 || dy > 10.0) {
+        console.warn(`[VehicleAnimation] Skipping suspicious position jump for route ${rId}:`, { 
+          from: lastPos, 
+          to: targetPos, 
+          delta: { dx: dx.toFixed(6), dy: dy.toFixed(6) },
+          distanceKm: ((dx + dy) * 111).toFixed(2)
+        });
+        return;
+      }
     }
 
     routeEntry.vehicleQueue.push(targetPos);
