@@ -1,0 +1,80 @@
+<div class="card" [class.selected]="selected" (click)="onCardClick()">
+  <div class="card-header">
+    <div class="title-group">
+      <span class="icon-main">
+        <img src="assets/icons/papaya.svg" alt="Ruta" class="papaya-icon" />
+      </span>
+      <h2 class="card-title">{{ route.name || 'Papaya' }}</h2>
+    </div>
+    <span 
+    class="badge" 
+    [class.active]="route.status === 'active'" 
+    [class.paused]="route.status === 'paused'"
+    [class.planned]="route.status === 'planned'"
+    [class.finished]="route.status === 'finished'"
+    >
+      {{ route.status || 'Activa' }}
+    </span>
+  </div>
+
+  <div class="card-body">
+    <div class="info-row">
+      <span class="icon-route">
+            <img src="assets/icons/route.svg" alt="Ruta" class="route-icon" />
+      </span>
+      <span>Planta 1 - Planta 2</span>
+    </div>
+    
+    <div class="info-row split">
+      <div class="truck-info">
+        <span class="icon-truck">
+            <img src="assets/icons/truck.svg" alt="Ruta" class="truck-icon" />
+        </span>
+        <span>ABC-123</span>
+      </div>
+      
+      <div class="time-info">
+        <span class="icon-clock">
+             <img src="assets/icons/clock.svg" alt="Ruta" class="clock-icon" />
+        </span>
+        <span>5h 20 min</span>
+      </div>
+    </div>
+
+    <div class="info-row" *ngIf="details">
+      <img src="assets/icons/package.svg" alt="package " class="truck-icon" />
+      <div class="info-row-body">
+        <p class="info-row-body-title">Detalle</p>
+        <div class="info-row-body-content">
+          <span>Proveedor:</span>
+          <p>Plantacion</p>
+        </div>
+        <div class="info-row-body-content">
+          <span>Producto:</span>
+          <p>Papaya</p>
+        </div>
+        <div class="info-row-body-content">
+          <span>Peso:</span>
+          <p>98 m3</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <div class="progress-container">
+      <div 
+      class="progress-bar" 
+      [style.width.%]="67"
+      [class.active]="route.status === 'active'" 
+      [class.paused]="route.status === 'paused'"
+      [class.planned]="route.status === 'planned'"
+      [class.finished]="route.status === 'finished'"
+      ></div>
+    </div>
+    <div class="progress-label">
+      67% completado
+    </div>
+  </div>
+  <button class="see-routes" *ngIf="details">Ver ruta</button>
+</div>

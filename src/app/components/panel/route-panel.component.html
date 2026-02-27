@@ -1,0 +1,66 @@
+<div class="panel" [class.collapsed]="collapsed">
+  <div class="panel-header">
+    <div class="content">
+      <div class="texts">
+        <img src="assets/icons/routes.svg" class="router-icon" />
+        <div class="info">
+          <div class="title">Rutas</div>
+          <div class="subtitle">Monitoreo en tiempo real</div>
+        </div>
+      </div>
+      <button class="collapse-btn" (click)="onTogglePanel()">
+        <img [src]="collapsed ? 'assets/icons/open-nav.svg' : 'assets/icons/close-nav.svg'" class="nav-icon" />
+      </button>
+    </div>
+
+    <div class="panel-summary">
+      <div class="summary-item">
+        <span class="dot active"></span> {{ activeCount }} <span class="label">Rutas activas</span>
+      </div>
+      <div class="summary-item">
+        <span class="dot paused"></span> {{ pausedCount }} <span class="label">En pausa</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters" *ngIf="!collapsed">
+    <div class="filter-header">
+      <img src="assets/icons/filter.svg" class="filter-icon" /> <span>Filtrar por:</span>
+    </div>
+    <div class="filter-controls">
+      <div class="control-group">
+        <label>Estado</label>
+        <div class="select-wrapper">
+          <select><option>Todos</option></select>
+        </div>
+      </div>
+      <div class="control-group">
+        <label>Código</label>
+        <div class="select-wrapper">
+          <select><option>Todos</option></select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cards-wrapper" *ngIf="!collapsed">
+    <div class="cards" #cardsContainer (scroll)="onScroll()">
+      <app-route-card
+        *ngFor="let route of routes"
+        [route]="route"
+        [selected]="route.rId === selectedRouteId"
+        (cardClick)="onRouteSelected($event)">
+      </app-route-card>
+      <div class="empty" *ngIf="routes.length === 0">Sin rutas activas</div>
+    </div>
+
+    <div class="scroll-controls">
+      <button class="scroll-btn" [class.visible]="showScrollUp" (click)="scrollUp()">
+        <img src="assets/icons/chevron-up.svg" class="filter-icon" />
+      </button>
+      <button class="scroll-btn" [class.visible]="showScrollDown" (click)="scrollDown()">
+        <img src="assets/icons/chevron-down.svg" class="filter-icon" />
+      </button>
+    </div>
+  </div>
+</div>

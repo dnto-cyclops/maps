@@ -1,0 +1,177 @@
+.card {
+  background: white;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 16px;
+  max-width: 360px;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.card.selected {
+  border-color: #f59e0b;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  color: #1a1a1a;
+}
+
+.badge {
+  padding: 8px 24px;
+  border-radius: 20px;
+  font-size: 18px;
+  color: #64748b;
+  justify-content: center;
+  font-style: inherit;
+  text-transform: capitalize;
+}
+
+.badge.active {
+  background: #e7f9ed;
+  color: #44c26a;
+  border: 1px solid #b7ebc6;
+}
+
+.badge.planned {
+  background: rgba(86, 203, 250, 0.25);
+  color: rgba(86, 203, 250, 1);
+  border: 1px solid rgba(86, 203, 250, 0.25);
+}
+
+.badge.finished {
+  background: rgba(196, 196, 196, 0.25);
+  color: rgba(110, 113, 116, 1);
+  border: 1px solid rgba(110, 113, 116, 1);
+}
+
+.badge.paused {
+  background: rgba(190, 0, 0, 0.25);
+  color: rgba(190, 0, 0, 1);
+  border: 1px solid rgba(190, 0, 0, 1);
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.split {
+  justify-content: space-between;
+}
+
+.info{
+  &-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 400;
+    font-style: normal;
+    color: #334155;
+    font-size: 16px;
+
+
+    &-body{
+      width: 100%;
+      gap: 2px;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 10px;
+
+      &-title{
+        font-weight: 400;
+        font-style: Regular;
+        font-size: 13px;
+        line-height: 100%;
+        letter-spacing: 0%;
+      }
+
+      &-content{
+        display: flex;
+        justify-content: space-between;
+        & p{
+          font-weight: normal;
+        }
+      }
+    }
+  }
+  
+}
+
+.truck-info, .time-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-container {
+  height: 10px;
+  background: #f1f5f9;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.3s ease;
+
+  &.active {
+    background: #f59e0b;
+  }
+  &.finished {
+    background: rgba(62, 181, 43, 1);
+  }
+  &.paused {
+    background: rgba(190, 0, 0, 1);
+  }
+  &.planned {
+    background: rgba(86, 203, 250, 1);
+  }
+}
+
+
+.progress-label {
+  text-align: right;
+  font-size: 16px;
+  color: #64748b;
+}
+
+.see-routes{
+  width: 100%;
+  border-radius: 4px;
+  background-color: rgba(48, 108, 45, 1);
+  border-radius: 4px;
+  padding: 10px;
+  border: none;
+  margin-top: 16px;
+  font-weight: normal;
+  color: white;
+  font-size: 16px;
+  
+
+  &:hover {
+    background-color: rgb(67, 113, 64);
+    cursor: pointer;
+  }
+}

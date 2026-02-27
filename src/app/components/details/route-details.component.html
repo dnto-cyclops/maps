@@ -1,0 +1,87 @@
+<div
+  class="route-details"
+  [class.route-details--visible]="visible && route"
+  *ngIf="route"
+  [class.route-details--panel-open]="!panelCollapsed"
+  [class.route-details--panel-closed]="panelCollapsed"
+>
+  <div class="route-details__panel">
+    <div class="route-details__main-section">
+      <div class="route-details__header">
+        <div class="route-details__title">
+          <span class="route-details__label">Producto - </span>
+          <img src="assets/icons/papaya.svg" class="route-details__icon" />
+          <p>Papaya</p>
+        </div>
+        <span
+          class="route-details__badge"
+          [class.route-details__badge--active]="route.status === 'active'"
+          [class.route-details__badge--paused]="route.status === 'paused'"
+          [class.route-details__badge--planned]="route.status === 'planned'"
+        >
+          {{ route.status | titlecase }}
+        </span>
+      </div>
+
+      <div class="route-details__meta">
+        <p class="route-details__meta-label">Origen:</p>
+        <p class="route-details__meta-text">Malambo</p>
+        <p class="route-details__meta-label">Destino:</p>
+        <p class="route-details__meta-text">Medellin</p>
+      </div>
+
+      <div class="route-details__info-list">
+        <div class="route-details__item">
+          <img src="assets/icons/garage.svg" class="route-details__item-icon" />
+          <div class="route-details__item-content">
+            <span class="route-details__item-label">Origen</span>
+            <span class="route-details__item-field">Finca 01</span>
+          </div>
+        </div>
+  
+        <div class="route-details__item">
+          <img src="assets/icons/calendar.svg" class="route-details__item-icon" />
+          <div class="route-details__item-content">
+            <span class="route-details__item-label">Fecha</span>
+            <span class="route-details__item-field">22 de Enero, 2026</span>
+          </div>
+        </div>
+  
+        <div class="route-details__item">
+          <img src="assets/icons/package.svg" class="route-details__item-icon" />
+          <div class="route-details__item-content">
+            <span class="route-details__item-label">Detalle</span>
+            
+            <div class="route-details__item-row">
+              <span class="route-details__item-field">Proveedor:</span>
+              <span class="route-details__item-value">Alfredo Carlos Cotes Fernandez</span>
+            </div>
+            
+            <div class="route-details__item-row">
+              <span class="route-details__item-field">Peso:</span>
+              <span class="route-details__item-value">200 kg</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+   <div class="route-details__driver-section">
+    <p class="route-details__driver-title">Información Conductor</p>
+    
+    <div class="route-details__driver-info">
+      <span class="route-details__driver-label">Conductor:</span>
+      <span class="route-details__driver-value">Osmar Gomez Cotes</span>
+    </div>
+
+    <div class="route-details__driver-info">
+      <span class="route-details__driver-label">Celular:</span>
+      <a class="route-details__driver-phone" [href]="'tel:' + route.driverPhone">
+        +54 324 54 29648
+      </a>
+    </div>
+  </div>
+
+    <button class="route-details__close-btn" (click)="close()">✕</button>
+  </div>
+</div>

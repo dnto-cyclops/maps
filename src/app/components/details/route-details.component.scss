@@ -1,0 +1,236 @@
+.route-details {
+  position: absolute;
+  bottom: 0;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+  &--visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  &--panel-closed {
+    left: 20px;
+    bottom: 24px;
+    transform: translateY(20px);
+    &.route-details--visible {
+      transform: translateY(0);
+    }
+
+    .route-details__panel {
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      border: 1px solid #e5e7eb;
+    }
+  }
+
+  &--panel-open {
+    left: 370px;
+    right: 0;
+    bottom: 0;
+    transform: translateY(20px);
+    &.route-details--visible {
+      transform: translateY(0);
+    }
+
+    .route-details__panel {
+      border-radius: 0;
+      border-top: 1px solid #e5e7eb;
+      height: 306px;
+    }
+  }
+
+  &__panel {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    background: #ffffff;
+    padding: 24px 32px;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  &__main-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    max-width: 434px;
+    border-right: 1px solid #e2e2e1;
+    padding-right: 16px;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    padding-right: 16px;
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #111827;
+    p {
+      font-size: 20px;
+      margin: 0;
+    }
+  }
+
+  &__label {
+    font-weight: 600;
+    font-size: 20px;
+  }
+  &__icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  &__meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px 8px;
+    margin-bottom: 36px;
+    &-label {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    &-text {
+      font-size: 14px;
+      font-weight: normal;
+    }
+  }
+
+  &__badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 12px;
+    border-radius: 20px;
+    &--active {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+    &--paused {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    &--planned {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+  }
+
+  &__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+
+    &-icon {
+      width: 32px;
+      height: 32px;
+    }
+
+    &-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    &-label {
+      font-size: 11px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    &-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    &-field {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    &-value {
+      font-size: 13px;
+      font-weight: normal;
+      color: #4b5563;
+    }
+  }
+
+  &__driver-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: rgba(62, 181, 43, 0.17);
+    padding: 20px;
+    border-radius: 14px;
+    min-width: 390px;
+    box-sizing: border-box;
+  }
+
+  &__driver-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #306c2d;
+    margin: 0 0 8px 0;
+  }
+
+  &__driver-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 1);
+  }
+
+  &__driver-label {
+    font-size: 16px;
+    font-weight: 500;
+    color: #000000;
+  }
+
+  &__driver-value {
+    font-size: 16px;
+    font-weight: 400;
+    color: #000000;
+  }
+
+  &__driver-phone {
+    font-size: 16px;
+    font-weight: 400;
+    color: #306c2d;
+    text-decoration: underline;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  &__close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+
+    &:hover {
+      color: #111827;
+      background: #f3f4f6;
+    }
+  }
+}

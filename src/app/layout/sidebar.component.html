@@ -1,0 +1,21 @@
+
+<aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+  <div class="sidebar-item active" routerLink="/map" routerLinkActive="active">
+    <img src="assets/icons/map.svg" class="sidebar-icon" />
+    <span class="sidebar-label" *ngIf="!sidebarCollapsed">Mapa</span>
+  </div>
+
+  <div class="sidebar-item" routerLink="/routes" routerLinkActive="active">
+    <img src="assets/icons/point.svg" class="sidebar-icon" />
+    <span class="sidebar-label" *ngIf="!sidebarCollapsed">Rutas</span>
+  </div>
+  
+  <div class="sidebar-footer">
+    <button class="toggle-sidebar-btn" (click)="toggleSidebar()">
+      <span class="arrow-icon" [class.rotated]="sidebarCollapsed">
+          <img src="assets/icons/close.svg" class="close" />
+      </span>
+      <span class="sidebar-label" *ngIf="!sidebarCollapsed">Ocultar menú</span>
+    </button>
+  </div>
+</aside>
