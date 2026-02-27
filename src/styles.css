@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
+* {
+    font-family: Montserrat;
+    font-weight: 600;
+    font-style: SemiBold;
+    line-height: 100%;
+    font-size: 16px;
+    letter-spacing: 0%;
+    margin: 0;
+    padding: 0;
+}
+
+
+router-outlet + * {
+  animation: routeFadeIn 500ms ease-out both;
+}
+
+@keyframes routeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: transslateY(0);
+  }
+}
+
+
+@media (max-width: 1440px) {
+  html {
+    font-size: 14px;
+  }
+}

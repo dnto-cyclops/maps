@@ -1,0 +1,31 @@
+:host {
+  display: block;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.app-shell {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  flex-direction: row;
+}
+
+.main-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    flex-direction: column;
+  }
+  
+  .main-content {
+    height: calc(100% - 60px);
+    overflow-y: auto;
+  }
+}
