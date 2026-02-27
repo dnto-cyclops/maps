@@ -1,0 +1,52 @@
+<div class="routes-view">
+  <div class="routes-header">
+    <h1 class="page-title">Rutas Activas</h1>
+
+    <div class="filters">
+      <img src="assets/icons/filter.svg" alt="filtrar" class="filter-icon" />
+      <span class="filter-label">Filtrar por</span>
+
+      <div class="filter-group">
+        <label>Estado</label>
+        <select [ngModel]="statusFilter()" (ngModelChange)="setStatus($event)">
+          <option value="Todos">Todos</option>
+          <option value="active">Activa</option>
+          <option value="paused">En pausa</option>
+          <option value="planned">Programada</option>
+          <option value="finished">Finalizado</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Código</label>
+        <select><option>Todos</option></select>
+      </div>
+
+      <div class="filter-group">
+        <label>Producto</label>
+        <select><option>Todos</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="state-msg" *ngIf="loading()">
+    <div class="spinner"></div>
+    <span>Cargando rutas...</span>
+  </div>
+
+  <div class="state-msg error" *ngIf="error()">
+    <span>No se pudieron cargar las rutas.</span>
+  </div>
+
+  <div class="routes-grid" *ngIf="!loading() && !error()">
+    <app-route-card
+      *ngFor="let route of filteredRoutes"
+      [route]="route"
+      [details]="true"
+    ></app-route-card>
+
+    <div class="empty" *ngIf="filteredRoutes.length === 0">
+      Sin rutas para el filtro seleccionado.
+    </div>
+  </div>
+</div>

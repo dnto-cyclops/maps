@@ -1,0 +1,25 @@
+<div class="map-wrapper">
+  <app-route-panel
+    [collapsed]="panelCollapsed"
+    [routes]="routeList"
+    [selectedRouteId]="selectedRouteId"
+    [activeCount]="activeCount"
+    [pausedCount]="pausedCount"
+    (togglePanel)="togglePanel()"
+    (routeSelected)="selectFromList($event)">
+  </app-route-panel>
+  <div id="map"></div>
+  <app-route-details-panel
+    [panelCollapsed]="panelCollapsed">
+  </app-route-details-panel>
+</div>
+
+<!-- <app-route-panel
+    [collapsed]="panelCollapsed"
+    [routes]="routeList"
+    [selectedRouteId]="selectedRouteId"
+    [activeCount]="activeCount"
+    [pausedCount]="pausedCount"
+    (togglePanel)="togglePanel()"
+    (routeSelected)="selectFromList($event)">
+  </app-route-panel> -->
