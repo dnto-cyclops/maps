@@ -2,9 +2,10 @@
   background: white;
   border: 1px solid #f0f0f0;
   border-radius: 12px;
-  padding: 16px;
-  max-width: 360px;
+  padding: 10px 14px;
+  max-width: 280px;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .card:hover {
@@ -20,6 +21,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  gap: 2px;
 }
 
 .title-group {
@@ -29,16 +31,16 @@
 }
 
 .card-title {
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 600;
   margin: 0;
   color: #1a1a1a;
 }
 
 .badge {
-  padding: 8px 24px;
+  padding: 4px 12px;
   border-radius: 20px;
-  font-size: 18px;
+  font-size: 10px;
   color: #64748b;
   justify-content: center;
   font-style: inherit;
@@ -87,7 +89,9 @@
     font-weight: 400;
     font-style: normal;
     color: #334155;
-    font-size: 16px;
+    span {font-size: 12px;}
+    p {font-size: 12px;}
+    img { width: 14px; }
 
 
     &-body{
@@ -153,7 +157,7 @@
 
 .progress-label {
   text-align: right;
-  font-size: 16px;
+  font-size: 0.8rem;
   color: #64748b;
 }
 
@@ -162,12 +166,12 @@
   border-radius: 4px;
   background-color: rgba(48, 108, 45, 1);
   border-radius: 4px;
-  padding: 10px;
+  padding: 8px;
   border: none;
   margin-top: 16px;
   font-weight: normal;
   color: white;
-  font-size: 16px;
+  font-size: 0.9rem;
   
 
   &:hover {

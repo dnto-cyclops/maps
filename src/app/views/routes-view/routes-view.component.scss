@@ -11,17 +11,27 @@
   margin: 0 0 16px 0;
   font-weight: 700;
   font-style: Bold;
-  font-size: 32px;
   line-height: 100%;
   letter-spacing: 0%;
+  font-size: 2rem; 
+  margin-bottom: 1rem;
+
+    
+    @media (max-width: 1280px) {
+        font-size: 1.5rem;
+    }
 }
 
 .filters {
   display: flex;
   align-items: center;
-  gap: 12px;
   margin-bottom: 20px;
   flex-wrap: wrap;
+  gap: 8px;
+  .filter-group select {
+      padding: 4px 8px;
+      font-size: 0.85rem;
+  }
 }
 
 .filter-icon { width: 16px; height: 16px; opacity: 0.5; }
@@ -54,12 +64,13 @@
 
 .routes-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 16px;
   overflow-y: auto;
   padding-right: 4px;
 
   @media (max-width: 1100px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 1280px) { gap: 12px; }
   @media (max-width: 700px)  { grid-template-columns: 1fr; }
 }
 

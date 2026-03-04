@@ -17,6 +17,7 @@
   overflow: hidden;
   position: relative;
   height: 100%;
+  isolation: isolate;
 }
 
 @media (max-width: 768px) {

@@ -13,7 +13,25 @@
 
 
 router-outlet + * {
-  animation: routeFadeIn 500ms ease-out both;
+  animation: routeFadeIn 500ms ease-out forwards;
+}
+
+.maplibregl-popup {
+  z-index: 1000;
+}
+
+.maplibregl-popup-content {
+  overflow: visible !important;
+}
+
+.maplibregl-map {
+  overflow: visible !important;
+  height: 100% !important;
+}
+
+.maplibregl-canvas-container,
+.maplibregl-canvas {
+  height: 100% !important;
 }
 
 @keyframes routeFadeIn {
@@ -23,7 +41,7 @@ router-outlet + * {
   }
   to {
     opacity: 1;
-    transform: transslateY(0);
+    transform: translateY(0);
   }
 }
 
@@ -32,4 +50,8 @@ router-outlet + * {
   html {
     font-size: 14px;
   }
+}
+
+@media (max-width: 1024px) {
+    html { font-size: 13px; }
 }
