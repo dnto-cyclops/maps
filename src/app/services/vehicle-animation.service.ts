@@ -91,7 +91,6 @@ export class VehicleAnimationService {
         t = 1;
         routeEntry.currentVehiclePos = nextPos;
         this.placeVehicle(rId, nextPos);
-        this.mapService.ensurePointVisible(nextPos as [number, number]);
         this.processVehicleQueue(rId, routeEntry); // Process next
       } else {
         // Interpolate position
@@ -101,7 +100,6 @@ export class VehicleAnimationService {
         
         routeEntry.currentVehiclePos = currentPos;
         this.placeVehicle(rId, currentPos);
-        this.mapService.ensurePointVisible(currentPos as [number, number]);
         requestAnimationFrame(animate);
       }
     };

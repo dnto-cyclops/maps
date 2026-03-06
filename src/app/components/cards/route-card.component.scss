@@ -8,12 +8,21 @@
   cursor: pointer;
 }
 
+.card.stopped {
+  background: radial-gradient(circle at top right, rgba(190, 0, 0, 0.14), rgba(190, 0, 0, 0.04) 45%, #ffffff 85%);
+  border-color: rgba(190, 0, 0, 0.3);
+  box-shadow: inset 0 0 28px rgba(190, 0, 0, 0.06);
+}
+
 .card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .card.selected {
   border-color: #f59e0b;
+  border-width: 2px;
+  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.25);
+  transform: translateY(-1px);
 }
 
 .card-header {
@@ -69,6 +78,12 @@
   background: rgba(190, 0, 0, 0.25);
   color: rgba(190, 0, 0, 1);
   border: 1px solid rgba(190, 0, 0, 1);
+}
+
+.badge.stopped {
+  background: rgba(190, 0, 0, 0.15);
+  color: rgba(190, 0, 0, 1);
+  border: 1px solid rgba(190, 0, 0, 0.7);
 }
 
 .card-body {
@@ -151,6 +166,9 @@
   }
   &.planned {
     background: rgba(86, 203, 250, 1);
+  }
+  &.stopped {
+    background: rgba(190, 0, 0, 1);
   }
 }
 

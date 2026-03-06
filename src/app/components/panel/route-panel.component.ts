@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnChanges, SimpleChanges, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouteCardComponent, RouteCardData } from '../cards/route-card.component';
 
@@ -79,7 +79,7 @@ export const MOCK_ROUTES: RouteCardData[] = [
   templateUrl: './route-panel.component.html',
   styleUrl: './route-panel.component.scss'
 })
-export class RoutePanelComponent {
+export class RoutePanelComponent implements OnChanges, AfterViewInit {
   @Input() collapsed: boolean = false;
   @Input() routes: RouteCardData[] = MOCK_ROUTES;
   @Input() selectedRouteId: string | null = null;
@@ -93,6 +93,16 @@ export class RoutePanelComponent {
 
   showScrollUp = false;
   showScrollDown = true;
+
+  ngAfterViewInit() {
+    this.scrollToSelectedRoute();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['selectedRouteId'] || changes['routes'] || changes['collapsed']) {
+      setTimeout(() => this.scrollToSelectedRoute(), 0);
+    }
+  }
 
   onTogglePanel() {
     this.togglePanel.emit();
@@ -114,5 +124,16 @@ export class RoutePanelComponent {
 
   scrollDown() {
     this.cardsContainer.nativeElement.scrollBy({ top: 320, behavior: 'smooth' });
+  }
+
+  private scrollToSelectedRoute() {
+    if (this.collapsed || !this.selectedRouteId || !this.cardsContainer) return;
+
+    const container = this.cardsContainer.nativeElement;
+    const selectedCard = container.querySelector(`[data-route-id="${this.selectedRouteId}"]`) as HTMLElement | null;
+    if (!selectedCard) return;
+
+    selectedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    this.onScroll();
   }
 }

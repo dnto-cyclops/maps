@@ -20,6 +20,10 @@ export class MapIconService {
         svg: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="white" stroke="#306C2D" stroke-width="2"/></svg>`,
       },
       {
+        id: 'stop-marker',
+        svg: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7" fill="#BE0000" stroke="white" stroke-width="2"/></svg>`,
+      },
+      {
         id: 'vehicle-icon',
         svg: `<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
 <circle cx="18" cy="18" r="17" fill="#306C2D" stroke="#F4F4F4" stroke-width="2"/>

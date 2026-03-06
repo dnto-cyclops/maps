@@ -13,7 +13,7 @@ import {
   RouteData 
 } from '../../services';
 import maplibregl from 'maplibre-gl';
-import { decode } from '@googlemaps/polyline-codec';
+import { NotificationType } from '../../enums/notification-type.enum';
 
 @Component({
 selector: 'app-route-map',
@@ -29,6 +29,9 @@ routeList: RouteCardData[] = [];
 selectedRouteId: string | null = null;
 activeCount = 0;
 pausedCount = 0;
+private loadingInitialSnapshot = false;
+private selectedDetailLayerIds: string[] = [];
+private selectedDetailSourceIds: string[] = [];
   
 // store route geometry and markers by rId
 routes: { [rId: string]: RouteData } = {};
@@ -51,7 +54,9 @@ constructor(
   ) {
     // Configure route clustering callback
     this.routeClusteringService.onRouteSelected = (routeId: string) => {
-      this.selectRoute(routeId);
+      this.zone.run(() => {
+        this.selectRoute(routeId);
+      });
     };
 
     // Configure route data provider for enhanced tooltips
@@ -82,7 +87,9 @@ constructor(
 
     // Configure vehicle selection callback
     this.routeDrawingService.onVehicleSelected = (routeId: string) => {
-      this.selectRoute(routeId);
+      this.zone.run(() => {
+        this.selectRoute(routeId);
+      });
     };
   }
   
@@ -99,6 +106,7 @@ constructor(
         next: (list: any[]) => {
           console.log('Snapshot received:', list);
           this.zone.run(() => {
+            this.loadingInitialSnapshot = true;
             (list || []).forEach((r: any) => {
               console.log('Processing route:', r.rId, r);
               // Update meta first so panel data is available
@@ -106,11 +114,8 @@ constructor(
               this.drawRoute(r);
             });
             console.log('RouteList after processing:', this.routeList);
-            // Auto-select first route to show details
-            if (list && list.length > 0) {
-              this.rs.selectRoute(list[0].rId);
-              this.selectedRouteId = list[0].rId;
-            }
+            this.loadingInitialSnapshot = false;
+            this.fitToVisibleRoutes();
           });
         },
         error: (err: any) => console.error('snapshot error', err)
@@ -121,11 +126,20 @@ constructor(
       this.us.onUpdate().subscribe((evt: any) => {
         // evt: {type: string, data: any}
         this.zone.run(() => {
-          if (evt.type === 'route_created') {
+          const rId = evt?.data?.rId || evt?.data?.routeId || evt?.data?.id;
+
+          if (evt?.notificationType === NotificationType.Started || evt?.type === 'route_started') {
+            if (!rId) return;
+
             this.drawRoute(evt.data);
             this.upsertRouteMeta(evt.data);
+            this.rs.upsertRouteFromUpdate(evt);
           } else if (evt.type === 'route_updated' || evt.type === 'pos_update') {
             this.updateVehicle(evt.data);
+            this.rs.upsertRouteFromUpdate(evt);
+          } else if (evt.type === 'route_finished' || evt.type === 'route_stopped') {
+            this.upsertRouteMeta(evt.data);
+            this.rs.upsertRouteFromUpdate(evt);
           }
         });
       });
@@ -143,7 +157,13 @@ constructor(
     
     // Use API data as primary source, fall back to stored entry
     const dest = r.dest || r.destination || entry?.dest || null;
-    const status = r.status || entry?.status || 'active';
+    const rawStatus = r.status || r.type;
+    const statusFromEvent = typeof rawStatus === 'string' ? rawStatus.toLowerCase() : '';
+    const status =
+      statusFromEvent === 'started' ? 'active' :
+      statusFromEvent === 'stopped' ? 'stopped' :
+      statusFromEvent === 'finished' ? 'finished' :
+      statusFromEvent || entry?.status || 'active';
     const start = (r.coordinates && r.coordinates[0]) || entry?.coords?.[0] || null;
     const current = (this.routes[rId]?.currentVehiclePos) || (r.coordinates ? r.coordinates[r.coordinates.length - 1] : entry?.coords?.[entry?.coords.length - 1]);
     
@@ -159,7 +179,7 @@ constructor(
     console.log(`Meta object for ${rId}:`, meta);
     
     if (existingIdx >= 0) this.routeList[existingIdx] = { ...this.routeList[existingIdx], ...meta };
-    else this.routeList.push(meta);
+    else this.routeList.unshift(meta);
     
     console.log(`RouteList now has ${this.routeList.length} routes:`, this.routeList);
     
@@ -180,6 +200,26 @@ constructor(
     
     // Parse coordinates using service
     const coords = this.routeDrawingService.parseRouteCoordinates(route);
+
+    if (coords.length === 0) {
+      this.routes[rId] = this.routes[rId] || { coords: [], lineId: `line-${rId}` };
+      this.routes[rId].status = route.status || 'active';
+
+      const fallbackPos = this.extractPosition(route);
+      if (fallbackPos) {
+        this.routes[rId].currentVehiclePos = fallbackPos;
+        this.placeOrMoveVehicle(rId, fallbackPos);
+      }
+
+      this.upsertRouteMeta({ ...route, rId, coordinates: fallbackPos ? [fallbackPos] : [] });
+
+      if (this.clusteringEnabled) {
+        setTimeout(() => this.updateClustering(), 50);
+      }
+
+      this.syncRouteVisualState();
+      return;
+    }
     
     // Initialize or update route entry
     this.routes[rId] = this.routes[rId] || { coords: [], lineId: `line-${rId}` };
@@ -196,11 +236,7 @@ constructor(
     const destPos = this.routeDrawingService.calculateDestination(route, endCoord);
     this.routes[rId].dest = destPos;
 
-    // Fit route to view
-    if (!this.routes[rId].fitted) {
-      this.routeDrawingService.fitRoute(coords, rId, destPos, endCoord || undefined);
-      this.routes[rId].fitted = true;
-    }
+    this.routes[rId].fitted = true;
 
     // Add markers
     if (startCoord && endCoord) {
@@ -224,6 +260,24 @@ constructor(
     if (this.clusteringEnabled) {
       this.updateClustering();
     }
+
+    this.syncRouteVisualState();
+  }
+
+  private extractPosition(data: any): [number, number] | null {
+    let pos: number[] | null = null;
+
+    if (Array.isArray(data?.coordinates) && data.coordinates.length === 2 && typeof data.coordinates[0] === 'number') {
+      pos = data.coordinates;
+    }
+    if (data?.current && Array.isArray(data.current) && data.current.length >= 2) pos = data.current;
+    else if (data?.pos && Array.isArray(data.pos) && data.pos.length >= 2) pos = data.pos;
+    else if (data?.position && Array.isArray(data.position) && data.position.length >= 2) pos = data.position;
+    else if (data?.lat && data?.lng) pos = [data.lng, data.lat];
+    else if (data?.latitude && data?.longitude) pos = [data.longitude, data.latitude];
+
+    if (!pos) return null;
+    return this.coordinateService.toLngLat(pos);
   }
 
   private placeOrMoveVehicle(rId: string, pos: number[]) {
@@ -249,11 +303,7 @@ constructor(
     const rId = update.rId || update.routeId || update.id;
     if (!rId) return;
 
-    const entry = this.routes[rId];
-    if (!entry) {
-      console.warn(`[updateVehicle] No route entry for ${rId}, ignoring update`);
-      return;
-    }
+    const entry = this.routes[rId] || (this.routes[rId] = { coords: [], lineId: `line-${rId}`, rId });
 
     let points: number[][] = [];
 
@@ -302,6 +352,198 @@ constructor(
       if (this.clusteringEnabled) {
         setTimeout(() => this.updateClustering(), 100);
       }
+
+      this.syncRouteVisualState();
+    }
+  }
+
+  private setLayerVisibility(layerId: string, visibility: 'visible' | 'none') {
+    if (!this.map?.getLayer(layerId)) return;
+    this.map.setLayoutProperty(layerId, 'visibility', visibility);
+  }
+
+  private syncRouteVisualState() {
+    const selectedId = this.selectedRouteId;
+
+    Object.keys(this.routes).forEach(rId => {
+      const visibility: 'visible' | 'none' = selectedId === rId ? 'visible' : 'none';
+      this.setLayerVisibility(`layer-${rId}`, visibility);
+      this.setLayerVisibility(`layer-start-${rId}`, visibility);
+      this.setLayerVisibility(`layer-dest-${rId}`, visibility);
+    });
+  }
+
+  private clearSelectedRouteDetailLayers() {
+    this.selectedDetailLayerIds.forEach(layerId => {
+      if (this.map?.getLayer(layerId)) {
+        this.map.removeLayer(layerId);
+      }
+    });
+    this.selectedDetailSourceIds.forEach(sourceId => {
+      if (this.map?.getSource(sourceId)) {
+        this.map.removeSource(sourceId);
+      }
+    });
+    this.selectedDetailLayerIds = [];
+    this.selectedDetailSourceIds = [];
+  }
+
+  private registerDetailOverlay(layerId: string, sourceId: string) {
+    this.selectedDetailLayerIds.push(layerId);
+    this.selectedDetailSourceIds.push(sourceId);
+  }
+
+  private drawPolylineLayer(sourceId: string, layerId: string, coords: number[][], paint: any, layout?: any) {
+    if (!coords || coords.length < 2) return;
+
+    this.map.addSource(sourceId, {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: coords },
+        properties: {}
+      }
+    });
+
+    this.map.addLayer({
+      id: layerId,
+      type: 'line',
+      source: sourceId,
+      paint,
+      layout: layout ?? {}
+    });
+
+    this.registerDetailOverlay(layerId, sourceId);
+  }
+
+  private drawStopMarker(routeId: string, idx: number, position: [number, number]) {
+    const sourceId = `selected-stop-${routeId}-${idx}`;
+    const layerId = `selected-stop-layer-${routeId}-${idx}`;
+    this.routeDrawingService.addMarker(this.map, sourceId, layerId, position, 'stop-marker');
+    this.registerDetailOverlay(layerId, sourceId);
+  }
+
+  private normalizeRecommendedRoutes(payload: any): Record<string, any[]> {
+    const normalized: Record<string, any[]> = {};
+    const source = payload?.recommendedRoutes || payload?.recommendations || {};
+
+    Object.keys(source).forEach(providerName => {
+      const raw = source[providerName];
+
+      if (Array.isArray(raw)) {
+        normalized[providerName] = raw;
+        return;
+      }
+
+      if (raw?.polyline) {
+        normalized[providerName] = [raw];
+        return;
+      }
+
+      if (raw?.remainingPolyline) {
+        normalized[providerName] = [{ polyline: raw.remainingPolyline }];
+        return;
+      }
+
+      if (raw && typeof raw === 'object') {
+        const nestedVariants = Object.values(raw)
+          .map((item: any) => item?.polyline ? item : (item?.remainingPolyline ? { polyline: item.remainingPolyline } : null))
+          .filter((item: any) => !!item);
+        if (nestedVariants.length > 0) {
+          normalized[providerName] = nestedVariants as any[];
+        }
+      }
+    });
+
+    if (Object.keys(normalized).length === 0) {
+      const remainingRecommendations = payload?.progress?.remaining || {};
+      Object.keys(remainingRecommendations).forEach(providerName => {
+        const remainingPolyline = remainingRecommendations?.[providerName]?.remainingPolyline;
+        if (!remainingPolyline) return;
+        normalized[providerName] = [{ polyline: remainingPolyline }];
+      });
+    }
+
+    return normalized;
+  }
+
+  private renderSelectedRouteDetails(routeId: string, details: any) {
+    if (this.selectedRouteId !== routeId) return;
+
+    this.clearSelectedRouteDetailLayers();
+
+    const payload = details?.route || details?.data || details || {};
+    const segments = Array.isArray(payload?.segments) ? payload.segments : [];
+
+    const recommendedRoutes = this.normalizeRecommendedRoutes(payload);
+
+    if (segments.length > 0) {
+      segments.forEach((segment: any, idx: number) => {
+        const coords = this.routeDrawingService.parseRouteCoordinates({ polyline: segment?.polyline });
+        if (coords.length < 2) return;
+
+        const isStopped = (segment?.type || '').toLowerCase() === 'stopped';
+        const sourceId = `selected-segment-${routeId}-${idx}`;
+        const layerId = `selected-segment-layer-${routeId}-${idx}`;
+
+        this.drawPolylineLayer(
+          sourceId,
+          layerId,
+          coords,
+          {
+            'line-color': isStopped ? '#BE0000' : '#306C2D',
+            'line-width': isStopped ? 5 : 4,
+            'line-opacity': 0.95
+          }
+        );
+
+        if (isStopped) {
+          const stopPoint = coords[0] as [number, number];
+          this.drawStopMarker(routeId, idx, stopPoint);
+        }
+      });
+    } else {
+      const traveledPolyline = payload?.progress?.traveledPolyline || payload?.realPolyline || payload?.polyline;
+      const traveledCoords = this.routeDrawingService.parseRouteCoordinates({ polyline: traveledPolyline });
+
+      if (traveledCoords.length > 1) {
+        this.drawPolylineLayer(
+          `selected-traveled-${routeId}`,
+          `selected-traveled-layer-${routeId}`,
+          traveledCoords,
+          {
+            'line-color': '#306C2D',
+            'line-width': 5,
+            'line-opacity': 0.95
+          }
+        );
+      }
+    }
+
+    const allProviderNames = Object.keys(recommendedRoutes);
+    const googleProvider = allProviderNames.find(k => k.toLowerCase().includes('google'));
+    const selectedProvider = googleProvider ?? allProviderNames[0];
+
+    if (selectedProvider) {
+      const variants = Array.isArray(recommendedRoutes[selectedProvider]) ? recommendedRoutes[selectedProvider] : [];
+      const providerKey = selectedProvider.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+      variants.forEach((variant: any, idx: number) => {
+        const coords = this.routeDrawingService.parseRouteCoordinates({ polyline: variant?.polyline });
+        if (coords.length < 2) return;
+
+        this.drawPolylineLayer(
+          `selected-rec-${providerKey}-${routeId}-${idx}`,
+          `selected-rec-layer-${providerKey}-${routeId}-${idx}`,
+          coords,
+          {
+            'line-color': '#2563EB',
+            'line-width': 5,
+            'line-opacity': 0.85,
+            'line-dasharray': [2, 2]
+          }
+        );
+      });
     }
   }
 
@@ -312,6 +554,35 @@ constructor(
     if (!this.map || !this.clusteringEnabled) return;
     
     this.routeClusteringService.clusterRoutes(this.map, this.routes);
+  }
+
+  private fitToVisibleRoutes() {
+    if (!this.map) return;
+
+    const allPoints: [number, number][] = [];
+
+    Object.values(this.routes).forEach((entry: RouteData) => {
+      if (entry.currentVehiclePos && entry.currentVehiclePos.length >= 2) {
+        allPoints.push([entry.currentVehiclePos[0], entry.currentVehiclePos[1]]);
+      }
+
+      if (entry.dest && entry.dest.length >= 2) {
+        allPoints.push([entry.dest[0], entry.dest[1]]);
+      }
+
+      if (entry.coords && entry.coords.length > 0) {
+        const first = entry.coords[0];
+        const last = entry.coords[entry.coords.length - 1];
+        if (first?.length >= 2) allPoints.push([first[0], first[1]]);
+        if (last?.length >= 2) allPoints.push([last[0], last[1]]);
+      }
+    });
+
+    if (allPoints.length === 0) return;
+
+    const bounds = new maplibregl.LngLatBounds(allPoints[0], allPoints[0]);
+    allPoints.forEach(p => bounds.extend(p));
+    this.mapService.fitBounds(bounds, { padding: 70, maxZoom: 13, duration: 900 });
   }
 
   /**
@@ -343,9 +614,11 @@ constructor(
   private finalizeRouteSelection(routeId: string) {
     this.selectedRouteId = routeId;
     this.rs.selectRoute(routeId);
+    this.clearSelectedRouteDetailLayers();
     
     // Update vehicle selection in drawing service
     this.routeDrawingService.setSelectedRoute(routeId);
+    this.syncRouteVisualState();
     
     const entry = this.routes[routeId];
     const pos = entry?.currentVehiclePos || entry?.coords?.[entry.coords.length - 1];
@@ -357,6 +630,7 @@ constructor(
     this.rs.details(routeId).subscribe({
       next: (details: any) => {
         console.log('Route details:', details);
+        this.renderSelectedRouteDetails(routeId, details);
       },
       error: (err: any) => console.error('Error getting route details:', err)
     });

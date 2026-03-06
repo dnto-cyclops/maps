@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './sidebar.component.scss'
 })
 export class SidebarComponent {
-  sidebarCollapsed = false;
+  sidebarCollapsed = true;
 
 
   toggleSidebar() {

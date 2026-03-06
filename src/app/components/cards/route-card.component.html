@@ -1,4 +1,4 @@
-<div class="card" [class.selected]="selected" (click)="onCardClick()">
+<div class="card" [class.selected]="selected" [class.stopped]="isStatus('stopped')" (click)="onCardClick()">
   <div class="card-header">
     <div class="title-group">
       <span class="icon-main">
@@ -8,12 +8,13 @@
     </div>
     <span 
     class="badge" 
-    [class.active]="route.status === 'active'" 
-    [class.paused]="route.status === 'paused'"
-    [class.planned]="route.status === 'planned'"
-    [class.finished]="route.status === 'finished'"
+    [class.active]="isStatus('active')" 
+    [class.paused]="isStatus('paused')"
+    [class.planned]="isStatus('planned')"
+    [class.finished]="isStatus('finished')"
+    [class.stopped]="isStatus('stopped')"
     >
-      {{ route.status || 'Activa' }}
+      {{ statusLabel || 'Activa' }}
     </span>
   </div>
 
@@ -66,10 +67,11 @@
       <div 
       class="progress-bar" 
       [style.width.%]="67"
-      [class.active]="route.status === 'active'" 
-      [class.paused]="route.status === 'paused'"
-      [class.planned]="route.status === 'planned'"
-      [class.finished]="route.status === 'finished'"
+      [class.active]="isStatus('active')" 
+      [class.paused]="isStatus('paused')"
+      [class.planned]="isStatus('planned')"
+      [class.finished]="isStatus('finished')"
+      [class.stopped]="isStatus('stopped')"
       ></div>
     </div>
     <div class="progress-label">

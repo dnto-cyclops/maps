@@ -90,9 +90,11 @@ constructor(
   /**
    * Draw or update route line on map
    */
-  drawRouteLine(map: maplibregl.Map, rId: string, coords: number[][]) {
+  drawRouteLine(map: maplibregl.Map, rId: string, coords: number[][], color?: string, width?: number) {
     const sourceId = `route-${rId}`;
-    
+    const lineColor = color ?? 'rgba(48, 108, 45, 1)';
+    const lineWidth = width ?? 4;
+
     if (map.getSource(sourceId)) {
       (map.getSource(sourceId) as any).setData({ 
         type: 'Feature', 
@@ -113,8 +115,8 @@ constructor(
         type: 'line', 
         source: sourceId, 
         paint: { 
-          'line-color': 'rgba(48, 108, 45, 1)', 
-          'line-width': 4 
+          'line-color': lineColor, 
+          'line-width': lineWidth 
         } 
       });
     }

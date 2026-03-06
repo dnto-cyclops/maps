@@ -1,8 +1,11 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouteCardComponent, RouteCardData } from '../../components/cards/route-card.component';
 import { RoutesService } from '../../services/routes.service';
+import { UpdatesService } from '../../services/updates.service';
+import { NotificationType } from '../../enums/notification-type.enum';
+import { Subject, takeUntil } from 'rxjs';
 
 type FilterStatus = 'Todos' | 'active' | 'paused' | 'planned' | 'finished';
 export const MOCK_ROUTES: RouteCardData[] = [
@@ -82,26 +85,56 @@ export const MOCK_ROUTES: RouteCardData[] = [
   templateUrl: './routes-view.component.html',
   styleUrl: './routes-view.component.scss'
 })
-export class RoutesViewComponent implements OnInit {
+export class RoutesViewComponent implements OnInit, OnDestroy {
   statusFilter = signal<FilterStatus>('Todos');
   loading = signal(true);
   error = signal(false);
+  private destroy$ = new Subject<void>();
 
-  allRoutes: RouteCardData[] = MOCK_ROUTES;
+  allRoutes: RouteCardData[] = [];
 
-  constructor(private rs: RoutesService) {}
+  constructor(private rs: RoutesService, private us: UpdatesService) {}
 
   ngOnInit() {
-    this.rs.snapshot().subscribe({
-      next: (list: any[]) => {
+    const cached = this.rs.getCurrentRoutes();
+    if (cached.length > 0) {
+      this.allRoutes = cached.map(r => this.mapToCard(r));
+      this.loading.set(false);
+    }
+
+    this.rs.routes$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(list => {
         this.allRoutes = (list || []).map(r => this.mapToCard(r));
         this.loading.set(false);
-      },
+      });
+
+    this.rs.snapshot().subscribe({
       error: () => {
         this.error.set(true);
         this.loading.set(false);
       }
     });
+
+    this.us.connect();
+    this.us.onUpdate()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((evt: any) => {
+        const rId = evt?.data?.rId || evt?.data?.routeId || evt?.data?.id;
+        if (!rId) return;
+
+        if (evt?.notificationType === NotificationType.Started || evt?.type === 'route_started') {
+          this.rs.upsertRouteFromUpdate(evt);
+          return;
+        }
+
+        this.rs.upsertRouteFromUpdate(evt);
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private mapToCard(r: any): RouteCardData {

@@ -26,6 +26,8 @@ export class UpdatesService {
   }
 
   connect() {
+    if (this.es) return;
+
     this.es = new EventSource(`${this.apiConfig.getApiUrl()}/api/updates/stream`);
     
     const handler = (eventName: string, e: Event) => {

@@ -36,6 +36,10 @@ export interface RouteCardData {
       this.cardClick.emit(this.route);
     }
 
+    isStatus(status: string): boolean {
+      return (this.route?.status || '').toLowerCase() === status;
+    }
+
     formatCoord(c: any): string {
       if (!c || c.length < 2) return 'N/D';
       return `${c[0].toFixed(5)}, ${c[1].toFixed(5)}`;
@@ -46,8 +50,10 @@ export interface RouteCardData {
     active: 'Activa',
     paused: 'En pausa',
     planned: 'Programada',
-    finished: 'Finalizado'
+    finished: 'Finalizado',
+    stopped: 'Detenida'
   };
-  return map[this.route.status || ''] || this.route.status || '';
+  const status = (this.route?.status || '').toLowerCase();
+  return map[status] || this.route?.status || '';
 } 
   }

@@ -45,12 +45,13 @@
 
   <div class="cards-wrapper" *ngIf="!collapsed">
     <div class="cards" #cardsContainer (scroll)="onScroll()">
-      <app-route-card
-        *ngFor="let route of routes"
-        [route]="route"
-        [selected]="route.rId === selectedRouteId"
-        (cardClick)="onRouteSelected($event)">
-      </app-route-card>
+      <div *ngFor="let route of routes" [attr.data-route-id]="route.rId">
+        <app-route-card
+          [route]="route"
+          [selected]="route.rId === selectedRouteId"
+          (cardClick)="onRouteSelected($event)">
+        </app-route-card>
+      </div>
       <div class="empty" *ngIf="routes.length === 0">Sin rutas activas</div>
     </div>
 
