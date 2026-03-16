@@ -14,6 +14,7 @@ import {
 } from '../../services';
 import maplibregl from 'maplibre-gl';
 import { NotificationType } from '../../enums/notification-type.enum';
+import { FruitIconService } from '../../services/fruit-icon.service';
 
 @Component({
 selector: 'app-route-map',
@@ -50,7 +51,8 @@ constructor(
   private mapIconService: MapIconService,
   private routeDrawingService: RouteDrawingService,
   private vehicleAnimationService: VehicleAnimationService,
-  private routeClusteringService: RouteClusteringService
+  private routeClusteringService: RouteClusteringService,
+  private fruitIconService: FruitIconService
   ) {
     // Configure route clustering callback
     this.routeClusteringService.onRouteSelected = (routeId: string) => {
@@ -65,10 +67,8 @@ constructor(
       const metaData = this.routeList.find(r => r.rId === rId);
       
       return {
-        name: metaData?.name || `Ruta ${rId}`,
         status: metaData?.status || 'active',
         dest: routeData?.dest || metaData?.dest,
-        current: routeData?.currentVehiclePos || metaData?.current
       };
     });
 
@@ -78,10 +78,8 @@ constructor(
       const metaData = this.routeList.find(r => r.rId === rId);
       
       return {
-        name: metaData?.name || `Ruta ${rId}`,
         status: metaData?.status || 'active',
         dest: routeData?.dest || metaData?.dest,
-        current: routeData?.currentVehiclePos || metaData?.current
       };
     });
 
@@ -100,15 +98,16 @@ constructor(
 
     this.map.on('load', async () => {
       await this.mapIconService.loadIcons(this.map);
+
+      const slugs = this.fruitIconService.getAllSlugs();
+      await this.mapIconService.loadFruitIcons(this.map, slugs);
       
       // Load existing active routes on startup (snapshot)
       this.rs.snapshot().subscribe({
         next: (list: any[]) => {
-          console.log('Snapshot received:', list);
           this.zone.run(() => {
             this.loadingInitialSnapshot = true;
             (list || []).forEach((r: any) => {
-              console.log('Processing route:', r.rId, r);
               // Update meta first so panel data is available
               this.upsertRouteMeta(r);
               this.drawRoute(r);
@@ -118,7 +117,6 @@ constructor(
             this.fitToVisibleRoutes();
           });
         },
-        error: (err: any) => console.error('snapshot error', err)
       });
 
       // Connect to SSE for real-time updates
@@ -150,13 +148,16 @@ constructor(
     const rId = r.rId || r.id || r.routeId;
     if (!rId) return;
     
-    console.log(`Upserting meta for route ${rId}:`, r);
-    
     const existingIdx = this.routeList.findIndex(x => x.rId === rId);
+    const existing = existingIdx >= 0 ? this.routeList[existingIdx] : null;
     const entry = this.routes[rId];
     
-    // Use API data as primary source, fall back to stored entry
-    const dest = r.dest || r.destination || entry?.dest || null;
+    const load = r.load || existing?.load || null;
+
+    if (load?.load) this.routeDrawingService.setRouteLoad(rId, load.load);
+      const destObj = r.dest && typeof r.dest === 'object' && !Array.isArray(r.dest)
+      ? r.dest
+      : (existingIdx >= 0 ? this.routeList[existingIdx].dest : null);
     const rawStatus = r.status || r.type;
     const statusFromEvent = typeof rawStatus === 'string' ? rawStatus.toLowerCase() : '';
     const status =
@@ -171,12 +172,13 @@ constructor(
       rId,
       name: r.name || `Ruta ${rId}`,
       status,
-      dest,
+      load,
+      dest: destObj,
       start,
-      current
+      current,
+      supplier: r.provider || (existingIdx >= 0 ? this.routeList[existingIdx].supplier : null),
+      plate: r.vehicle || (existingIdx >= 0 ? this.routeList[existingIdx].plate : null)
     };
-    
-    console.log(`Meta object for ${rId}:`, meta);
     
     if (existingIdx >= 0) this.routeList[existingIdx] = { ...this.routeList[existingIdx], ...meta };
     else this.routeList.unshift(meta);
@@ -191,12 +193,15 @@ constructor(
 
   private updateCounters() {
     this.activeCount = this.routeList.filter(r => (r.status || 'active') === 'active').length;
-    this.pausedCount = this.routeList.filter(r => (r.status || 'active') !== 'active').length;
+    this.pausedCount = this.routeList.filter(r => (r.status || 'stopped') === 'stopped').length;
   }
 
   drawRoute(route: any) {
     const rId = route.rId || route.id || route.routeId;
     if (!rId) return;
+    
+    const load = route.loadInfo?.load || route.load || 'papaya';
+    this.routeDrawingService.setRouteLoad(rId, load);
     
     // Parse coordinates using service
     const coords = this.routeDrawingService.parseRouteCoordinates(route);

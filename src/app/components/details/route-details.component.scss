@@ -97,7 +97,7 @@
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 2px 8px;
-    margin-bottom: 36px;
+    margin-bottom: 24px;
     &-label {
       font-weight: 600;
       font-size: 14px;
@@ -161,7 +161,7 @@
     }
 
     &-field {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: #111827;
     }

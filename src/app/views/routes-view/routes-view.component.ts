@@ -8,75 +8,7 @@ import { NotificationType } from '../../enums/notification-type.enum';
 import { Subject, takeUntil } from 'rxjs';
 
 type FilterStatus = 'Todos' | 'active' | 'paused' | 'planned' | 'finished';
-export const MOCK_ROUTES: RouteCardData[] = [
-  {
-    rId: "R-001",
-    name: "Papaya",
-    status: "active",
-    start: [4.60971, -74.08175],
-    dest: [4.71099, -74.07209],
-    current: [4.65001, -74.09000],
-  },
-  {
-    rId: "R-002",
-    name: "Papaya",
-    status: "paused",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },
-  {
-    rId: "R-003",
-    name: "Papaya",
-    status: "planned",
-    start: [3.45164, -76.53198],
-    dest: [3.50000, -76.52000],
-    current: [3.46000, -76.52500],
-  },
-  {
-    rId: "R-002",
-    name: "Papaya",
-    status: "finished",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },{
-    rId: "R-002",
-    name: "Papaya",
-    status: "paused",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },{
-    rId: "R-002",
-    name: "Papaya",
-    status: "paused",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },{
-    rId: "R-002",
-    name: "Papaya",
-    status: "finished",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },{
-    rId: "R-002",
-    name: "Papaya",
-    status: "paused",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },{
-    rId: "R-002",
-    name: "Papaya",
-    status: "paused",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },
-];
+
 
 @Component({
   selector: 'app-routes-view',
@@ -93,7 +25,10 @@ export class RoutesViewComponent implements OnInit, OnDestroy {
 
   allRoutes: RouteCardData[] = [];
 
-  constructor(private rs: RoutesService, private us: UpdatesService) {}
+  constructor(
+    private rs: RoutesService,
+    private us: UpdatesService
+  ) {}
 
   ngOnInit() {
     const cached = this.rs.getCurrentRoutes();
@@ -140,19 +75,14 @@ export class RoutesViewComponent implements OnInit, OnDestroy {
   private mapToCard(r: any): RouteCardData {
     return {
       rId: r.rId || r.id || r.routeId,
-      name: r.name || 'Papaya',
       status: r.status || 'active',
-      plate: r.plate || r.placa || '',
-      route: r.route || r.destino || '',
+      plate: r.plate || r.vehicle || r.placa || '',        
+      route: r.route || r.dest?.name || r.destino || '',   
       time: r.time || r.duration || '',
       progress: r.progress ?? r.porcentaje ?? 0,
-      supplier: r.supplier || r.proveedor || '',
-      product: r.product || r.producto || '',
-      weight: r.weight || r.peso || '',
-      noSchedule: !r.time && !r.duration,
+      supplier: r.supplier || r.provider || r.proveedor || '',
       dest: r.dest || r.destination || null,
-      start: r.start || null,
-      current: r.current || null,
+      load: r.load || null,
     };
   }
 

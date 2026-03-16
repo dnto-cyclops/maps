@@ -125,4 +125,25 @@ export class MapIconService {
   isLoaded(): boolean {
     return this.iconsLoaded;
   }
+
+  async loadFruitIcons(map: maplibregl.Map, slugs: string[]): Promise<void> {
+    const promises = slugs.flatMap(slug => [
+      this.loadSvgFromAssets(map, `fruit-${slug}`,          `assets/icons/fruits/${slug}.svg`),      // ← fruits/
+      this.loadSvgFromAssets(map, `fruit-${slug}-selected`, `assets/icons/fruits/${slug}-selected.svg`), // ← fruits/
+    ]);
+    await Promise.allSettled(promises);
+  }
+
+  private loadSvgFromAssets(map: maplibregl.Map, iconId: string, url: string): Promise<void> {
+    return new Promise((resolve) => {
+      if (map.hasImage(iconId)) { resolve(); return; }
+      const img = new Image(36, 36);
+      img.onload = () => {
+        try { if (!map.hasImage(iconId)) map.addImage(iconId, img); } catch {}
+        resolve();
+      };
+
+      img.src = url;
+    });
+  }
 }

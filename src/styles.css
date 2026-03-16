@@ -11,38 +11,11 @@
     padding: 0;
 }
 
-
-router-outlet + * {
-  animation: routeFadeIn 500ms ease-out forwards;
-}
-
-.maplibregl-popup {
-  z-index: 1000;
-}
-
-.maplibregl-popup-content {
-  overflow: visible !important;
-}
-
-.maplibregl-map {
-  overflow: visible !important;
-  height: 100% !important;
-}
-
-.maplibregl-canvas-container,
-.maplibregl-canvas {
-  height: 100% !important;
-}
-
-@keyframes routeFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 

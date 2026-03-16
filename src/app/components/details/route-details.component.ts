@@ -65,19 +65,24 @@ export class RouteDetailsPanelComponent implements OnInit, OnDestroy {
 
   private toViewModel(data: any, fallbackId: string): RouteDetails {
     const status = (data?.status || 'active').toLowerCase();
-    const quantity = data?.loadInfo?.quantity;
-    const unit = data?.loadInfo?.unit || '';
-    const weight = data?.weight || data?.peso || (quantity ? `${quantity} ${unit}`.trim() : 'N/D');
-    const destination = data?.destination?.name || data?.destination || data?.destino || 'N/D';
-    const origin = data?.origin?.name || data?.origin || data?.farm || 'N/D';
-    const supplier = data?.supplier || data?.proveedor || data?.loadInfo?.supplier || 'N/D';
-    const productName = data?.loadInfo?.load || data?.productName || data?.product || data?.producto || 'N/D';
+    const loadObj = data?.load || null;
+    const quantity = loadObj?.quantity;
+    const unit =  loadObj?.unit || ''
+    const productName = loadObj?.load || data?.productName || data?.product || 'N/D';
+    const weight = quantity ? `${quantity} ${unit}`.trim() : (data?.weight || 'N/D');;
+    const destObj = data?.destination || data?.dest || null;
+    const destination = typeof destObj === 'object' && destObj !== null
+      ? destObj.name
+      : (destObj || 'N/D');
+    const origin = data?.origin?.name || data?.origin || data?.provider || 'N/D';
+    const supplier = data?.provider || data?.supplier || data?.proveedor || 'N/D';
 
     const startTs = data?.startTs;
     const date = startTs
       ? new Date(startTs * 1000).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })
       : 'N/D';
 
+    console.log(data.driver)
     return {
       rId: data?.rId || data?.routeId || data?.id || fallbackId,
       productName,
@@ -88,8 +93,8 @@ export class RouteDetailsPanelComponent implements OnInit, OnDestroy {
       date,
       supplier,
       weight,
-      driverName: data?.driver || data?.driverName || 'N/D',
-      driverPhone: data?.driverPhone || data?.phone || data?.driverMobile || '',
+      driverName: data.driver || 'N/D',
+      driverPhone: data?.driverPhone || 'N/D',
       vehicle: data?.vehicle || data?.plate || data?.placa || 'N/D'
     };
   }
