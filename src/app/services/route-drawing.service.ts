@@ -3,6 +3,7 @@ import maplibregl from 'maplibre-gl';
 import { decode } from '@googlemaps/polyline-codec';
 import { CoordinateService } from './coordinate.service';
 import { MapService } from './map.service';
+import { FruitIconService } from './fruit-icon.service';
 
 export interface RouteData {
   rId: string;
@@ -30,9 +31,17 @@ private currentTooltip: maplibregl.Popup | null = null;
   
 constructor(
   private coordinateService: CoordinateService,
-  private mapService: MapService
+  private mapService: MapService,
+  private fruitIconService: FruitIconService
 ) {}
 
+  private routeLoadMap = new Map<string, string>();
+  private currentClickPopup: maplibregl.Popup | null = null;
+
+
+  setRouteLoad(rId: string, load: string | undefined) {
+    if (load && typeof load === 'string') this.routeLoadMap.set(rId, load);
+  }
   /**
    * Parse route coordinates from various formats
    */
@@ -132,31 +141,39 @@ constructor(
       properties: { rId: rId || '' }
     };
     
+    let resolvedIcon = iconId;
+    let iconSize = 1.0;
+
+    if (iconId === 'vehicle-icon' && rId) {
+      const load = this.routeLoadMap.get(rId);
+      const isSelected = rId === this.selectedRouteId;
+      resolvedIcon = isSelected
+        ? this.fruitIconService.getSelectedIconId(load)
+        : this.fruitIconService.getIconId(load);
+      iconSize = isSelected ? 1.3 : 1.0;
+    }
+
+    if (iconId === 'vehicle-icon' && rId) {
+      const load = this.routeLoadMap.get(rId);
+      console.log(`[addMarker] rId=${rId} load=${load} resolvedIcon=${resolvedIcon}`);
+    }
+
     if (map.getSource(sourceId)) {
       (map.getSource(sourceId) as any).setData(data);
     } else {
-      // Determine the correct icon and size to use
-      let actualIconId = iconId;
-      let iconSize = 1.0; // Default size
-      
-      if (iconId === 'vehicle-icon' && rId === this.selectedRouteId) {
-        actualIconId = 'vehicle-icon-selected';
-        iconSize = 1.3; // 30% bigger when selected
-      }
-
       map.addSource(sourceId, { type: 'geojson', data });
       map.addLayer({
         id: layerId,
         type: 'symbol',
         source: sourceId,
         layout: { 
-          'icon-image': actualIconId, 
-          'icon-anchor': iconId === 'vehicle-icon' ? 'center' : 'bottom', 
+          'icon-image': resolvedIcon, 
+          'icon-anchor': iconId === 'vehicle-icon' ? 'bottom' : 'bottom', 
           'icon-size': iconSize,
-          'icon-allow-overlap': true
+          'icon-allow-overlap': true,
         },
         paint: {
-          'icon-opacity': rId === this.selectedRouteId ? 1 : 0.8
+          'icon-opacity': 1
         }
       });
 
@@ -171,6 +188,7 @@ constructor(
       this.setVehicleSelected(map, layerId, true);
     }
   }
+  
 
   /**
    * Fit map to show route bounds
@@ -242,7 +260,7 @@ constructor(
         }
         
         const coordinates = (e.features![0].geometry as any).coordinates.slice();
-        const tooltipContent = this.createVehicleTooltip(rId);
+        const tooltipContent = this.createClickPopupContent(rId);
         
         this.currentTooltip = new maplibregl.Popup({
           closeButton: false,
@@ -269,6 +287,22 @@ constructor(
           this.currentTooltip.remove();
           this.currentTooltip = null;
         }
+
+        const coordinates = (e.features![0].geometry as any).coordinates.slice();
+
+        if (this.currentClickPopup) {
+          this.currentClickPopup.remove();
+          this.currentClickPopup = null;
+        }
+
+        this.currentClickPopup = new maplibregl.Popup({
+          closeButton: true,
+          closeOnClick: false,
+          className: 'vehicle-click-popup'
+        })
+        .setLngLat(coordinates)
+        .setHTML(this.createClickPopupContent(rId))
+        .addTo(map)
         
         // Select this route
         this.selectVehicle(map, rId);
@@ -295,76 +329,76 @@ constructor(
   /**
    * Create tooltip content for vehicle
    */
-  private createVehicleTooltip(rId: string): string {
-    // Get route data from provider
+  private createClickPopupContent(rId: string): string {
     let routeData: any = null;
     if (this.routeDataProvider) {
       routeData = this.routeDataProvider(rId);
     }
 
     const routeName = routeData?.name || `Ruta ${rId}`;
-    const status = routeData?.status || 'Activa';
-    const destination = routeData?.dest ? '📍 Con destino' : '';
-    const isSelected = rId === this.selectedRouteId;
-    
+    const status = routeData?.status || 'active';
+
+    const statusLabels: Record<string, string> = {
+      active: 'Activa', paused: 'En pausa', planned: 'Programada', finished: 'Finalizado'
+    };
+    const statusLabel = statusLabels[status] || status;
+
     return `
-      <div class="vehicle-tooltip">
-        <div class="vehicle-tooltip-header">
-          <strong>${routeName}</strong>
-          <span class="status-badge status-${status.toLowerCase()}">${status}</span>
+      <div class="click-popup">
+        <div class="click-popup__header">
+          <strong class="click-popup__title">${routeName}</strong>
+          <span class="click-popup__badge click-popup__badge--${status}">${statusLabel}</span>
         </div>
-        <div class="vehicle-tooltip-body">
-          ${destination ? `<div>${destination}</div>` : ''}
-          <div>🚚 Vehículo ${isSelected ? 'seleccionado' : 'activo'}</div>
-          <div class="action-hint">👆 Click para ${isSelected ? 'ver detalles' : 'seleccionar'}</div>
+        <div class="click-popup__body">
+          <div class="click-popup__row">
+            <span class="click-popup__label">ID:</span>
+            <span class="click-popup__value">${rId}</span>
+          </div>
         </div>
       </div>
       <style>
-        .vehicle-hover-tooltip .maplibregl-popup-content {
-          padding: 8px 12px;
-          border-radius: 6px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          font-size: 11px;
+        .vehicle-click-popup .maplibregl-popup-content {
+          padding: 12px 16px;
+          border-radius: 10px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+          font-family: sans-serif;
+          min-width: 180px;
           border: 1px solid #e5e7eb;
-          background: white;
-          min-width: 140px;
         }
-        .vehicle-tooltip-header {
+        .vehicle-click-popup .maplibregl-popup-tip {
+          border-top-color: white;
+        }
+        .click-popup__header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 4px;
-          color: #1f2937;
-          font-size: 12px;
+          margin-bottom: 8px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #f3f4f6;
         }
-        .status-badge {
-          font-size: 9px;
-          padding: 2px 4px;
-          border-radius: 8px;
-          font-weight: 500;
+        .click-popup__title {
+          font-size: 13px;
+          color: #111827;
         }
-        .status-active, .status-activa {
-          background: #dcfce7;
-          color: #16a34a;
-        }
-        .status-paused, .status-pausada {
-          background: #fed7aa;
-          color: #ea580c;
-        }
-        .vehicle-tooltip-body {
-          color: #6b7280;
+        .click-popup__badge {
           font-size: 10px;
-        }
-        .vehicle-tooltip-body > div {
-          margin: 2px 0;
-        }
-        .action-hint {
-          color: #3b82f6;
+          padding: 2px 8px;
+          border-radius: 12px;
           font-weight: 500;
-          margin-top: 4px;
-          padding-top: 3px;
-          border-top: 1px solid #f3f4f6;
         }
+        .click-popup__badge--active   { background: #dcfce7; color: #16a34a; }
+        .click-popup__badge--paused   { background: #fed7aa; color: #ea580c; }
+        .click-popup__badge--planned  { background: #dbeafe; color: #2563eb; }
+        .click-popup__badge--finished { background: #f3f4f6; color: #6b7280; }
+        .click-popup__row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 11px;
+          margin: 4px 0;
+          color: #374151;
+        }
+        .click-popup__label { color: #9ca3af; }
+        .click-popup__value { font-weight: 500; }
       </style>
     `;
   }
@@ -400,13 +434,14 @@ constructor(
       return;
     }
 
+    const rId = layerId.replace('layer-vehicle-', '');
+    const load = this.routeLoadMap.get(rId);
+
     // Change the icon image to show selection state
-    const iconImage = selected ? 'vehicle-icon-selected' : 'vehicle-icon';
-    console.log(`🖼️ Changing icon to: ${iconImage} for layer: ${layerId}`);
-    
-    // Change size: 1.3 (30% bigger) when selected, 1.0 normal
+    const iconImage = selected
+        ? this.fruitIconService.getSelectedIconId(load)
+        : this.fruitIconService.getIconId(load);
     const iconSize = selected ? 1.3 : 1.0;
-    console.log(`📏 Changing icon size to: ${iconSize} for layer: ${layerId}`);
     
     try {
       map.setLayoutProperty(layerId, 'icon-image', iconImage);
@@ -414,7 +449,7 @@ constructor(
       
       // Also adjust opacity for better visual feedback
       const opacity = selected ? 1 : 0.8;
-      map.setPaintProperty(layerId, 'icon-opacity', opacity);
+      map.setPaintProperty(layerId, 'icon-opacity', 1);
       
       console.log(`✅ Successfully updated vehicle visual state:`, { layerId, iconImage, iconSize, opacity });
     } catch (error) {

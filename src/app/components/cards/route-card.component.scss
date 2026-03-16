@@ -108,6 +108,12 @@
     p {font-size: 12px;}
     img { width: 14px; }
 
+    &-dest{
+      width: 250px;               
+      white-space: nowrap;         
+      overflow: hidden;            
+      text-overflow: ellipsis; 
+    }
 
     &-body{
       width: 100%;
@@ -140,6 +146,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.truck-info{
+  text-transform: uppercase;
 }
 
 .progress-container {

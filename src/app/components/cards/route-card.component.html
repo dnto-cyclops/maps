@@ -2,9 +2,9 @@
   <div class="card-header">
     <div class="title-group">
       <span class="icon-main">
-        <img src="assets/icons/papaya.svg" alt="Ruta" class="papaya-icon" />
+        <img [src]="fruitIconPath" [alt]="route.load?.load || 'Ruta'" class="papaya-icon" />
       </span>
-      <h2 class="card-title">{{ route.name || 'Papaya' }}</h2>
+      <h2 class="card-title">{{ route.load?.load || route.rId }}</h2>
     </div>
     <span 
     class="badge" 
@@ -14,49 +14,49 @@
     [class.finished]="isStatus('finished')"
     [class.stopped]="isStatus('stopped')"
     >
-      {{ statusLabel || 'Activa' }}
+      {{ statusLabel || 'Activa' }} 
     </span>
   </div>
 
   <div class="card-body">
-    <div class="info-row">
+   <div class="info-row" *ngIf="route.dest">
       <span class="icon-route">
-            <img src="assets/icons/route.svg" alt="Ruta" class="route-icon" />
+        <img src="assets/icons/route.svg" alt="Ruta" class="route-icon" />
       </span>
-      <span>Planta 1 - Planta 2</span>
+      <span class="info-row-dest">{{ route.supplier || '' }} - {{ route.dest.name }}</span>
     </div>
-    
+
     <div class="info-row split">
-      <div class="truck-info">
+      <div class="truck-info" *ngIf="route.plate">
         <span class="icon-truck">
-            <img src="assets/icons/truck.svg" alt="Ruta" class="truck-icon" />
+          <img src="assets/icons/truck.svg" alt="Camión" class="truck-icon" />
         </span>
-        <span>ABC-123</span>
+        <span>{{ route.plate }}</span>
       </div>
-      
-      <div class="time-info">
+
+      <div class="time-info"><!-- *ngIf="route.time" -->
         <span class="icon-clock">
-             <img src="assets/icons/clock.svg" alt="Ruta" class="clock-icon" />
+          <img src="assets/icons/clock.svg" alt="Tiempo" class="clock-icon" />
         </span>
-        <span>5h 20 min</span>
+        <span>{{ route.dest?.estimated_durationS || 'Calculando..' }}</span>
       </div>
     </div>
 
-    <div class="info-row" *ngIf="details">
-      <img src="assets/icons/package.svg" alt="package " class="truck-icon" />
+    <div class="info-row" *ngIf="details && route.load">
+      <img src="assets/icons/package.svg" alt="package" class="truck-icon" />
       <div class="info-row-body">
         <p class="info-row-body-title">Detalle</p>
-        <div class="info-row-body-content">
+        <div class="info-row-body-content" *ngIf="route.supplier">
           <span>Proveedor:</span>
-          <p>Plantacion</p>
+          <p>{{ route.supplier }}</p>
         </div>
         <div class="info-row-body-content">
           <span>Producto:</span>
-          <p>Papaya</p>
+          <p>{{ route.load.load }}</p>
         </div>
         <div class="info-row-body-content">
           <span>Peso:</span>
-          <p>98 m3</p>
+          <p>{{ route.load.quantity }} {{ route.load.unit }}</p>
         </div>
       </div>
     </div>
@@ -66,7 +66,7 @@
     <div class="progress-container">
       <div 
       class="progress-bar" 
-      [style.width.%]="67"
+      [style.width.%]="route.progress ?? 0"
       [class.active]="isStatus('active')" 
       [class.paused]="isStatus('paused')"
       [class.planned]="isStatus('planned')"
@@ -75,8 +75,9 @@
       ></div>
     </div>
     <div class="progress-label">
-      67% completado
+      {{ route.progress ?? 0 }}% completado
     </div>
   </div>
+
   <button class="see-routes" *ngIf="details">Ver ruta</button>
 </div>

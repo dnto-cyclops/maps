@@ -363,7 +363,8 @@ constructor(private mapIconService: MapIconService) {}
             'icon-image': 'vehicle-icon',
             'icon-allow-overlap': true,
             'icon-ignore-placement': true,
-            'icon-size': 1.2
+            'icon-size': 1.2,
+            'icon-anchor': 'bottom'
           }
         });
       }
@@ -599,7 +600,8 @@ constructor(private mapIconService: MapIconService) {}
           'icon-image': `cluster-${count}`,
           'icon-allow-overlap': true,
           'icon-ignore-placement': true,
-          'icon-size': 1.2  // Slightly larger for better click target
+          'icon-size': 1.2,  // Slightly larger for better click target
+          'icon-anchor': 'bottom'
         }
       });
 

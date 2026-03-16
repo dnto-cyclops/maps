@@ -2,75 +2,6 @@ import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnChange
 import { CommonModule } from '@angular/common';
 import { RouteCardComponent, RouteCardData } from '../cards/route-card.component';
 
-export const MOCK_ROUTES: RouteCardData[] = [
-  {
-    rId: "R-001",
-    name: "Papaya",
-    status: "active",
-    start: [4.60971, -74.08175],
-    dest: [4.71099, -74.07209],
-    current: [4.65001, -74.09000],
-  },
-  {
-    rId: "R-002",
-    name: "Papaya",
-    status: "paused",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },
-  {
-    rId: "R-003",
-    name: "Papaya",
-    status: "planned",
-    start: [3.45164, -76.53198],
-    dest: [3.50000, -76.52000],
-    current: [3.46000, -76.52500],
-  },
-  {
-    rId: "R-002",
-    name: "Papaya",
-    status: "finished",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },{
-    rId: "R-002",
-    name: "Papaya",
-    status: "paused",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },{
-    rId: "R-002",
-    name: "Papaya",
-    status: "paused",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },{
-    rId: "R-002",
-    name: "Papaya",
-    status: "finished",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },{
-    rId: "R-002",
-    name: "Papaya",
-    status: "paused",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },{
-    rId: "R-002",
-    name: "Papaya",
-    status: "paused",
-    start: [6.24420, -75.58121],
-    dest: [6.30000, -75.56000],
-    current: [6.26000, -75.57000],
-  },
-];
 
 @Component({
   selector: 'app-route-panel',
@@ -81,7 +12,7 @@ export const MOCK_ROUTES: RouteCardData[] = [
 })
 export class RoutePanelComponent implements OnChanges, AfterViewInit {
   @Input() collapsed: boolean = false;
-  @Input() routes: RouteCardData[] = MOCK_ROUTES;
+  @Input() routes: RouteCardData[] = [];
   @Input() selectedRouteId: string | null = null;
   @Input() activeCount: number = 0;
   @Input() pausedCount: number = 0;
