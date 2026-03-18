@@ -34,11 +34,11 @@
         <span>{{ route.plate }}</span>
       </div>
 
-      <div class="time-info"><!-- *ngIf="route.time" -->
+      <div class="time-info">
         <span class="icon-clock">
           <img src="assets/icons/clock.svg" alt="Tiempo" class="clock-icon" />
         </span>
-        <span>{{ route.dest?.estimated_durationS || 'Calculando..' }}</span>
+        <span>{{ formatEstimatedDuration(route.dest?.estimated_durationS) }}</span>
       </div>
     </div>
 
@@ -79,5 +79,5 @@
     </div>
   </div>
 
-  <button class="see-routes" *ngIf="details">Ver ruta</button>
+  <button class="see-routes" *ngIf="details" (click)="onViewRoute($event)">Ver ruta</button>
 </div>

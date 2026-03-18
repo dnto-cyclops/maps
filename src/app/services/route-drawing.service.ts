@@ -255,54 +255,60 @@ constructor(
       mouseenter: (e: any) => {
         map.getCanvas().style.cursor = 'pointer';
         
-        if (this.currentTooltip) {
-          this.currentTooltip.remove();
-        }
+        // if (this.currentTooltip) {
+        //   this.currentTooltip.remove();
+        // }
         
-        const coordinates = (e.features![0].geometry as any).coordinates.slice();
+        const coordinates = (e.features![0].geometry as any).coordinates.slice() as [number, number];
         const tooltipContent = this.createClickPopupContent(rId);
         
-        this.currentTooltip = new maplibregl.Popup({
-          closeButton: false,
-          closeOnClick: false,
-          className: 'vehicle-hover-tooltip'
-        })
-        .setLngLat(coordinates)
-        .setHTML(tooltipContent)
-        .addTo(map);
+        // this.currentTooltip = new maplibregl.Popup({
+        //   closeButton: false,
+        //   closeOnClick: false,
+        //   className: 'vehicle-hover-tooltip',
+        //   offset: {
+        //     'bottom': [0, -48],
+        //   } as any
+        // })
+        // .setLngLat(coordinates)
+        // .setHTML(tooltipContent)
+        // .addTo(map);
       },
 
       mouseleave: () => {
         map.getCanvas().style.cursor = '';
-        if (this.currentTooltip) {
-          this.currentTooltip.remove();
-          this.currentTooltip = null;
-        }
+        // if (this.currentTooltip) {
+        //   this.currentTooltip.remove();
+        //   this.currentTooltip = null;
+        // }
       },
 
       click: (e: any) => {
         console.log(`🖱️ Vehicle clicked:`, { rId, layerId, event: e });
         
-        if (this.currentTooltip) {
-          this.currentTooltip.remove();
-          this.currentTooltip = null;
-        }
+        // if (this.currentTooltip) {
+        //   this.currentTooltip.remove();
+        //   this.currentTooltip = null;
+        // }
 
-        const coordinates = (e.features![0].geometry as any).coordinates.slice();
+        const coordinates = (e.features![0].geometry as any).coordinates.slice() as [number, number];
 
-        if (this.currentClickPopup) {
-          this.currentClickPopup.remove();
-          this.currentClickPopup = null;
-        }
+        // if (this.currentClickPopup) {
+        //   this.currentClickPopup.remove();
+        //   this.currentClickPopup = null;
+        // }
 
-        this.currentClickPopup = new maplibregl.Popup({
-          closeButton: true,
-          closeOnClick: false,
-          className: 'vehicle-click-popup'
-        })
-        .setLngLat(coordinates)
-        .setHTML(this.createClickPopupContent(rId))
-        .addTo(map)
+        // this.currentClickPopup = new maplibregl.Popup({
+        //   closeButton: true,
+        //   closeOnClick: false,
+        //   className: 'vehicle-click-popup',
+        //   offset: {
+        //     'bottom': [0, -48],
+        //   } as any
+        // })
+        // .setLngLat(coordinates)
+        // .setHTML(this.createClickPopupContent(rId))
+        // .addTo(map)
         
         // Select this route
         this.selectVehicle(map, rId);
@@ -470,10 +476,10 @@ constructor(
     });
     this.routeTooltipHandlers.clear();
 
-    if (this.currentTooltip) {
-      this.currentTooltip.remove();
-      this.currentTooltip = null;
-    }
+    // if (this.currentTooltip) {
+    //   this.currentTooltip.remove();
+    //   this.currentTooltip = null;
+    // }
   }
 
   /**

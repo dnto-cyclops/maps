@@ -1,0 +1,22 @@
+<div 
+  class="route-summary"
+  [class.route-summary--panel-open]="!panelCollapsed"
+  [class.route-summary--panel-closed]="panelCollapsed"
+>
+  <div class="summary-content">
+    <div class="item">
+      <span class="item-dot item-dot--origin"></span>
+      <span class="label">Origen</span>
+    </div>
+
+    <div class="item">
+      <span class="item-dot item-dot--destination"></span>
+      <span class="label">Destino</span>
+    </div>
+
+    <div class="item">
+      <span class="item-dot item-dot--stopped"></span>
+      <span class="label">Detenido</span>
+    </div>
+  </div>
+</div>

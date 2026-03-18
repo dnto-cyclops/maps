@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 export interface RouteLoad {
   load: string;
@@ -74,6 +75,13 @@ export class RouteCardComponent implements OnInit {
   @Input() selected: boolean = false;
   @Output() cardClick = new EventEmitter<RouteCardData>();
 
+  constructor(private router: Router) {}
+
+  onViewRoute(event: Event) {
+    event.stopPropagation();
+    this.router.navigate(['/map'], { queryParams: { rId: this.route.rId } });
+  }
+
   ngOnInit() {
     console.log('[LIST-ROUTES] initialized with route:', this.route);
   }
@@ -94,6 +102,19 @@ export class RouteCardComponent implements OnInit {
   get fruitIconPath(): string {
     const fruit = (this.route?.load?.load || 'default').toLowerCase().trim();
     return `assets/icons/fruits/cards/${fruit}.svg`;
+  }
+
+  formatEstimatedDuration(seconds?: number): string {
+    if (!seconds) return 'Calculando..';
+    
+    const totalMinutes = Math.round(seconds / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours > 0) {
+      return minutes > 0 ? `${hours}H ${minutes}m` : `${hours}H`;
+    }
+    return `${minutes}m`;
   }
 
   get statusLabel(): string {
