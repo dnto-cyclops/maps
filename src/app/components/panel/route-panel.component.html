@@ -25,34 +25,53 @@
 
   <div class="filters" *ngIf="!collapsed">
     <div class="filter-header">
-      <img src="assets/icons/filter.svg" class="filter-icon" /> <span>Filtrar por:</span>
+      <img src="assets/icons/filter.svg" class="filter-icon" /> 
+      <span>Filtros</span>
+      <button class="toggle-filters-btn" (click)="toggleFiltersVisibility()" [attr.aria-expanded]="showFilters">
+        <img [src]="showFilters ? 'assets/icons/chevron-up.svg' : 'assets/icons/chevron-down.svg'" class="chevron-icon" />
+      </button>
     </div>
-    <div class="filter-controls">
+
+    <div class="filter-controls" *ngIf="showFilters">
       <div class="control-group">
         <label>Estado</label>
         <div class="select-wrapper">
-          <select><option>Todos</option></select>
+          <select [value]="selectedStatus" (change)="onStatusChange($event)">
+            <option *ngFor="let status of uniqueStatusOptions" [value]="status">{{ status }}</option>
+          </select>
         </div>
       </div>
       <div class="control-group">
-        <label>Código</label>
+        <label>Producto</label>
         <div class="select-wrapper">
-          <select><option>Todos</option></select>
+          <select [value]="selectedFruit" (change)="onFruitChange($any($event).target.value)">
+            <option *ngFor="let fruit of uniqueFruits" [value]="fruit">{{ fruit }}</option>
+          </select>
         </div>
+      </div>
+      <div class="control-group">
+        <label>Desde</label>
+        <input type="date" class="date-input" [ngModel]="dateFromFilter" 
+              (ngModelChange)="setDateFrom($event)" />
+      </div>
+      <div class="control-group">
+        <label>Hasta</label>
+        <input type="date" class="date-input" [ngModel]="dateToFilter" 
+              (ngModelChange)="setDateTo($event)" />
       </div>
     </div>
   </div>
 
   <div class="cards-wrapper" *ngIf="!collapsed">
     <div class="cards" #cardsContainer (scroll)="onScroll()">
-      <div *ngFor="let route of routes" [attr.data-route-id]="route.rId">
+      <div *ngFor="let route of filteredRoutes" [attr.data-route-id]="route.rId">
         <app-route-card
           [route]="route"
           [selected]="route.rId === selectedRouteId"
           (cardClick)="onRouteSelected($event)">
         </app-route-card>
       </div>
-      <div class="empty" *ngIf="routes.length === 0">Sin rutas activas</div>
+      <div class="empty" *ngIf="filteredRoutes.length === 0">Sin rutas activas</div>
     </div>
 
     <div class="scroll-controls">

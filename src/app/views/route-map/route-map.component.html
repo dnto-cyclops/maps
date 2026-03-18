@@ -9,7 +9,12 @@
     (routeSelected)="selectFromList($event)">
   </app-route-panel>
   <div id="map"></div>
+  <app-route-summary-overlay
+    [panelCollapsed]="panelCollapsed"
+  >
+  </app-route-summary-overlay>
   <app-route-details-panel
-    [panelCollapsed]="panelCollapsed">
+    [panelCollapsed]="panelCollapsed"
+    [routeData]="selectedRouteDetails">
   </app-route-details-panel>
 </div>

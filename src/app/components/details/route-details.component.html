@@ -31,7 +31,7 @@
 
       <div class="route-details__meta">
         <p class="route-details__meta-label">Origen:</p>
-        <p class="route-details__meta-text">{{ route.origin }}</p>
+        <p class="route-details__meta-text">{{ route.supplier }}</p>
         <p class="route-details__meta-label">Destino:</p>
         <p class="route-details__meta-text">{{ route.destination }}</p>
       </div>
@@ -41,7 +41,7 @@
           <img src="assets/icons/garage.svg" class="route-details__item-icon" />
           <div class="route-details__item-content">
             <span class="route-details__item-label">Origen</span>
-            <span class="route-details__item-field">{{ route.farm }}</span>
+            <span class="route-details__item-field">{{ route.supplier }}</span>
           </div>
         </div>
   
@@ -71,20 +71,36 @@
         </div>
       </div>
     </div>
-
-   <div class="route-details__driver-section">
-    <p class="route-details__driver-title">Información Conductor</p>
-    
-    <div class="route-details__driver-info">
-      <span class="route-details__driver-label">Conductor:</span>
-      <span class="route-details__driver-value">{{ route.driverName }}</span>
+  
+  <div class="route-details__right">
+    <div class="route-details__driver-section">
+      <p class="route-details__driver-title">Información Conductor</p>
+      
+      <div class="route-details__driver-info">
+        <span class="route-details__driver-label">Conductor:</span>
+        <span class="route-details__driver-value">{{ route.driverName }}</span>
+      </div>
+  
+      <div class="route-details__driver-info">
+        <span class="route-details__driver-label">Celular:</span>
+        <a class="route-details__driver-phone" [href]="'tel:' + route.driverPhone">
+          {{ route.driverPhone || 'N/D' }}
+        </a>
+      </div>
     </div>
-
-    <div class="route-details__driver-info">
-      <span class="route-details__driver-label">Celular:</span>
-      <a class="route-details__driver-phone" [href]="'tel:' + route.driverPhone">
-        {{ route.driverPhone || 'N/D' }}
-      </a>
+    <div 
+      class="route-details__alert"
+      *ngIf="route.status === 'stopped' && route.stoppedSince"
+    >
+      <div class="route-details__alert-title">
+         Alerta de inactividad
+      </div>
+      <div class="route-details__alert-text" *ngIf="isInactiveAlert">
+        El conductor lleva más de 30 minutos detenido.
+      </div>
+      <div class="route-details__alert-text">
+        Tiempo detenido: <strong>{{ stoppedDuration }}</strong>
+      </div>
     </div>
   </div>
 

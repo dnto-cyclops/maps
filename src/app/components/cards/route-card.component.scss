@@ -19,9 +19,16 @@
 }
 
 .card.selected {
-  border-color: #f59e0b;
-  border-width: 2px;
-  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.25);
+  border-color: rgba(84, 155, 50, 1);
+  border-width: 1px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+.card.stopped.selected {
+  border-color: rgb(214, 28, 28);
+  border-width: 1px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
   transform: translateY(-1px);
 }
 

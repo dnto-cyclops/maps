@@ -398,37 +398,40 @@ constructor(private mapIconService: MapIconService) {}
       mouseenter: (e: any) => {
         map.getCanvas().style.cursor = 'pointer';
         
-        if (this.currentHoverPopup) {
-          this.currentHoverPopup.remove();
-        }
+        // if (this.currentHoverPopup) {
+        //   this.currentHoverPopup.remove();
+        // }
         
         const coordinates = (e.features![0].geometry as any).coordinates.slice();
         
         // Create tooltip content
         const tooltipContent = this.createRouteTooltip(rId);
         
-        this.currentHoverPopup = new maplibregl.Popup({
-          closeButton: false,
-          closeOnClick: false,
-          className: 'route-hover-tooltip'
-        })
-        .setLngLat(coordinates)
-        .setHTML(tooltipContent)
-        .addTo(map);
+        // this.currentHoverPopup = new maplibregl.Popup({
+        //   closeButton: false,
+        //   closeOnClick: false,
+        //   className: 'route-hover-tooltip',
+        //   offset: {
+        //     'bottom': [0, -48],
+        //   } as any
+        // })
+        // .setLngLat(coordinates)
+        // .setHTML(tooltipContent)
+        // .addTo(map);
       },
 
       mouseleave: () => {
         map.getCanvas().style.cursor = '';
-        if (this.currentHoverPopup) {
-          this.currentHoverPopup.remove();
-          this.currentHoverPopup = null;
-        }
+        // if (this.currentHoverPopup) {
+        //   this.currentHoverPopup.remove();
+        //   this.currentHoverPopup = null;
+        // }
       },
 
       click: (e: any) => {
-        if (this.currentHoverPopup) {
-          this.currentHoverPopup.remove();
-        }
+        // if (this.currentHoverPopup) {
+        //   this.currentHoverPopup.remove();
+        // }
         this.selectRouteFromCluster(rId);
       }
     };
@@ -769,10 +772,10 @@ constructor(private mapIconService: MapIconService) {}
       this.clusterPopup = null;
     }
 
-    if (this.currentHoverPopup) {
-      this.currentHoverPopup.remove();
-      this.currentHoverPopup = null;
-    }
+    // if (this.currentHoverPopup) {
+    //   this.currentHoverPopup.remove();
+    //   this.currentHoverPopup = null;
+    // }
   }
 
   /**

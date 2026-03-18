@@ -2,29 +2,77 @@
     <div class="routes-header">
       <h1 class="page-title">Rutas Activas</h1>
 
-      <div class="filters">
-        <img src="assets/icons/filter.svg" alt="filtrar" class="filter-icon" />
-        <span class="filter-label">Filtrar por</span>
-
-        <div class="filter-group">
-          <label>Estado</label>
-          <select [ngModel]="statusFilter()" (ngModelChange)="setStatus($event)">
-            <option value="Todos">Todos</option>
-            <option value="active">Activa</option>
-            <option value="paused">En pausa</option>
-            <option value="planned">Programada</option>
-            <option value="finished">Finalizado</option>
-          </select>
+      <div class="filters-container">
+        <div class="filters-header" (click)="toggleFilters()">
+          <img src="assets/icons/filter.svg" alt="filtrar" class="filter-icon" />
+          <span class="filter-label">Filtrar</span>
+          <img 
+            [src]="filtersOpen() ? 'assets/icons/chevron-up.svg' : 'assets/icons/chevron-down.svg'" 
+            class="chevron-icon" 
+            alt="toggle" 
+          />
         </div>
 
-        <div class="filter-group">
-          <label>Código</label>
-          <select><option>Todos</option></select>
-        </div>
+        <div class="filters" *ngIf="filtersOpen()">
+          <div class="filter-group">
+            <label>Estado</label>
+            <select [ngModel]="statusFilter()" (ngModelChange)="setStatus($event)">
+              <option value="Todos">Todos</option>
+              <option value="active">Activa</option>
+              <option value="stopped">Detenida</option>
+              <option value="planned">Programada</option>
+              <option value="finished">Finalizado</option>
+            </select>
+          </div>
 
-        <div class="filter-group">
-          <label>Producto</label>
-          <select><option>Todos</option></select>
+          <div class="filter-group">
+            <label>Placa</label>
+            <input 
+              type="text" 
+              class="search-input" 
+              placeholder="Buscar placa..." 
+              [ngModel]="searchPlate()" 
+              (ngModelChange)="setSearchPlate($event)" />
+          </div>
+
+          <div class="filter-group">
+            <label>Producto</label>
+            <select [ngModel]="selectedFruit()" (ngModelChange)="setFruit($event)">
+              <option *ngFor="let fruit of uniqueFruits" [value]="fruit">{{ fruit }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Proveedor</label>
+            <select [ngModel]="selectedProvider()" (ngModelChange)="setProvider($event)">
+              <option *ngFor="let provider of uniqueProviders" [value]="provider">{{ provider }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Destino</label>
+            <select [ngModel]="selectedDestination()" (ngModelChange)="setDestination($event)">
+              <option *ngFor="let destination of uniqueDestinations" [value]="destination">{{ destination }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Desde</label>
+            <input 
+              type="date" 
+              class="date-input" 
+              [ngModel]="dateFromFilter()" 
+              (ngModelChange)="setDateFrom($event)" />
+          </div>
+
+          <div class="filter-group">
+            <label>Hasta</label>
+            <input 
+              type="date" 
+              class="date-input" 
+              [ngModel]="dateToFilter()" 
+              (ngModelChange)="setDateTo($event)" />
+          </div>
         </div>
       </div>
     </div>

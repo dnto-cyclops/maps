@@ -1,0 +1,58 @@
+.route-summary {
+  position: absolute;
+  z-index: 10;
+  transition: all 0.3s ease;
+
+  .summary-content {
+    background: white;
+    border-radius: 8px;
+    padding: 8px 20px;
+    display: flex;
+    gap: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    
+    .label {
+      font-size: 13px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .item-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+
+      &--origin {
+        background-color: #306C2D;
+      }
+
+      &--destination {
+        background-color: white;
+        border: 1.5px solid #306C2D;
+      }
+
+      &--stopped {
+        background-color: #BE0000;
+      }
+    }
+    
+  }
+}
+
+.route-summary--panel-open {
+  top: 20px;
+  left: 320px;
+}
+
+.route-summary--panel-closed {
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}

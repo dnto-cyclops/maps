@@ -15,11 +15,13 @@ import {
 import maplibregl from 'maplibre-gl';
 import { NotificationType } from '../../enums/notification-type.enum';
 import { FruitIconService } from '../../services/fruit-icon.service';
+import { ActivatedRoute } from '@angular/router';
+import { RouteSummaryOverlayComponent } from '../../components';
 
 @Component({
 selector: 'app-route-map',
 standalone: true,
-imports: [CommonModule, RoutePanelComponent, RouteDetailsPanelComponent],
+imports: [CommonModule, RoutePanelComponent, RouteDetailsPanelComponent, RouteSummaryOverlayComponent],
   templateUrl: './route-map.component.html',
   styleUrl: './route-map.component.scss',
 })
@@ -33,6 +35,7 @@ pausedCount = 0;
 private loadingInitialSnapshot = false;
 private selectedDetailLayerIds: string[] = [];
 private selectedDetailSourceIds: string[] = [];
+selectedRouteDetails: any = null;
   
 // store route geometry and markers by rId
 routes: { [rId: string]: RouteData } = {};
@@ -52,7 +55,8 @@ constructor(
   private routeDrawingService: RouteDrawingService,
   private vehicleAnimationService: VehicleAnimationService,
   private routeClusteringService: RouteClusteringService,
-  private fruitIconService: FruitIconService
+  private fruitIconService: FruitIconService,
+  private activatedRoute: ActivatedRoute
   ) {
     // Configure route clustering callback
     this.routeClusteringService.onRouteSelected = (routeId: string) => {
@@ -98,6 +102,7 @@ constructor(
 
     this.map.on('load', async () => {
       await this.mapIconService.loadIcons(this.map);
+      this.addColombiaOutline();
 
       const slugs = this.fruitIconService.getAllSlugs();
       await this.mapIconService.loadFruitIcons(this.map, slugs);
@@ -115,6 +120,11 @@ constructor(
             console.log('RouteList after processing:', this.routeList);
             this.loadingInitialSnapshot = false;
             this.fitToVisibleRoutes();
+
+            const rId = this.activatedRoute.snapshot.queryParamMap.get('rId');
+            if (rId) {
+              setTimeout(() => this.selectRoute(rId), 300);
+            }
           });
         },
       });
@@ -132,6 +142,19 @@ constructor(
             this.drawRoute(evt.data);
             this.upsertRouteMeta(evt.data);
             this.rs.upsertRouteFromUpdate(evt);
+            setTimeout(() => {
+              this.rs.snapshot().subscribe({
+                next: (list: any[]) => {
+                  this.zone.run(() => {
+                    const newRoute = list.find((r: any) => (r.rId || r.id) === rId);
+                    if (newRoute) {
+                      this.upsertRouteMeta(newRoute);
+                      this.rs.upsertRoute(newRoute);
+                    }
+                  });
+                }
+              });
+            }, 1500);
           } else if (evt.type === 'route_updated' || evt.type === 'pos_update') {
             this.updateVehicle(evt.data);
             this.rs.upsertRouteFromUpdate(evt);
@@ -177,7 +200,8 @@ constructor(
       start,
       current,
       supplier: r.provider || (existingIdx >= 0 ? this.routeList[existingIdx].supplier : null),
-      plate: r.vehicle || (existingIdx >= 0 ? this.routeList[existingIdx].plate : null)
+      plate: r.vehicle || (existingIdx >= 0 ? this.routeList[existingIdx].plate : null),
+      startTs: r.startTs || (existingIdx >= 0 ? this.routeList[existingIdx].startTs : null),
     };
     
     if (existingIdx >= 0) this.routeList[existingIdx] = { ...this.routeList[existingIdx], ...meta };
@@ -620,7 +644,7 @@ constructor(
     this.selectedRouteId = routeId;
     this.rs.selectRoute(routeId);
     this.clearSelectedRouteDetailLayers();
-    
+    this.selectedRouteDetails = null;
     // Update vehicle selection in drawing service
     this.routeDrawingService.setSelectedRoute(routeId);
     this.syncRouteVisualState();
@@ -634,8 +658,10 @@ constructor(
     // Get route details
     this.rs.details(routeId).subscribe({
       next: (details: any) => {
-        console.log('Route details:', details);
+        const fromSnapshot = this.routeList.find(r => r.rId === routeId);
+        this.selectedRouteDetails = { ...(fromSnapshot || {}), ...(details || {}) };
         this.renderSelectedRouteDetails(routeId, details);
+        this.cdr.detectChanges();
       },
       error: (err: any) => console.error('Error getting route details:', err)
     });
@@ -688,4 +714,36 @@ constructor(
   togglePanel() {
     this.panelCollapsed = !this.panelCollapsed;
   }
+
+  private addColombiaOutline() {
+    if (this.map.getSource('colombia-outline')) return;
+
+    this.map.addSource('colombia-outline', {
+      type: 'geojson',
+      data: 'assets/geo/colombia.geo.json'
+    });
+
+    this.map.addLayer({
+      id: 'colombia-fill',
+      type: 'fill',
+      source: 'colombia-outline',
+      paint: {
+        'fill-color': '#306C2D',
+        'fill-opacity': 0.04
+      }
+    });
+
+    this.map.addLayer({
+      id: 'colombia-border',
+      type: 'line',
+      source: 'colombia-outline',
+      paint: {
+        'line-color': '#306C2D',
+        'line-width': 2,
+        'line-opacity': 0.6,
+        'line-dasharray': [3, 2]
+      }
+    });
+  }
+  
 }

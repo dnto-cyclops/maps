@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RoutesService } from '../../services/routes.service';
 import { Subject, takeUntil } from 'rxjs';
@@ -16,6 +16,7 @@ export interface RouteDetails {
   driverName: string;
   driverPhone: string;
   vehicle: string;
+  stoppedSince: number | null;
 }
 
 @Component({
@@ -25,8 +26,9 @@ export interface RouteDetails {
   templateUrl: './route-details.component.html',
   styleUrl: './route-details.component.scss'
 })
-export class RouteDetailsPanelComponent implements OnInit, OnDestroy {
+export class RouteDetailsPanelComponent implements OnInit, OnDestroy, OnChanges {
   @Input() panelCollapsed = false;
+  @Input() routeData: any = null;
   route: RouteDetails | null = null;
   visible = false;
   private destroy$ = new Subject<void>();
@@ -36,7 +38,11 @@ export class RouteDetailsPanelComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.rs.selected$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(id => this.load(id));
+      .subscribe(id => {
+        if (!id) { this.visible = false; return; }
+        this.visible = true;
+        this.route = null;
+      });
   }
 
   ngOnDestroy() {
@@ -44,8 +50,17 @@ export class RouteDetailsPanelComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['routeData'] && this.routeData) {
+      this.route = this.toViewModel(this.routeData, this.routeData.rId);
+    }
+  }
+
   load(id: string) {
     if (!id) return;
+    this.visible = true;
+    this.route = null;
+    
     const fromSnapshot = this.rs.getCurrentRoutes().find(r => {
       const routeId = r?.rId || r?.routeId || r?.id;
       return routeId === id;
@@ -76,11 +91,20 @@ export class RouteDetailsPanelComponent implements OnInit, OnDestroy {
       : (destObj || 'N/D');
     const origin = data?.origin?.name || data?.origin || data?.provider || 'N/D';
     const supplier = data?.provider || data?.supplier || data?.proveedor || 'N/D';
-
+    const driverObj = data?.driver && typeof data.driver === 'object' ? data.driver : null;
+    const driverName = driverObj?.driver || (typeof data?.driver === 'string' ? data.driver : 'N/D');
+    const driverPhone = driverObj?.phone || data?.driverPhone || 'N/D';
     const startTs = data?.startTs;
     const date = startTs
       ? new Date(startTs * 1000).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })
       : 'N/D';
+    const segments: any[] = data?.segments || [];
+    const lastStoppedSegment = [...segments].reverse().find((s: any) => 
+      (s.type || '').toLowerCase() === 'stopped'
+    );
+    const stoppedSince = (status === 'stopped' && lastStoppedSegment?.tsStart) 
+      ? lastStoppedSegment.tsStart 
+      : null;
 
     console.log(data.driver)
     return {
@@ -93,9 +117,10 @@ export class RouteDetailsPanelComponent implements OnInit, OnDestroy {
       date,
       supplier,
       weight,
-      driverName: data.driver || 'N/D',
-      driverPhone: data?.driverPhone || 'N/D',
-      vehicle: data?.vehicle || data?.plate || data?.placa || 'N/D'
+      driverName: driverName,
+      driverPhone: driverPhone,
+      vehicle: data?.vehicle || data?.plate || data?.placa || 'N/D',
+      stoppedSince
     };
   }
 
@@ -112,5 +137,27 @@ export class RouteDetailsPanelComponent implements OnInit, OnDestroy {
       stopped: 'Detenida'
     };
     return map[this.route?.status || ''] || '';
+  }
+
+  get stoppedDuration(): string {
+    if (!this.route?.stoppedSince) return '';
+    
+    const nowSecs = Math.floor(Date.now() / 1000);
+    const diffSecs = nowSecs - this.route.stoppedSince;
+    
+    if (diffSecs < 60) return `${diffSecs} seg`;
+    
+    const totalMinutes = Math.floor(diffSecs / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${totalMinutes} min`;
+  }
+
+  get isInactiveAlert(): boolean {
+    if (!this.route?.stoppedSince) return false;
+    const diffSecs = Math.floor(Date.now() / 1000) - this.route.stoppedSince;
+    return diffSecs > 30 * 60;
   }
 }
