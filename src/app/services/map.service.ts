@@ -21,7 +21,7 @@ export class MapService {
     });
 
     // Agregamos controles básicos de navegación
-    this.map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    this.map.addControl(new maplibregl.NavigationControl({}), 'top-right');
 
     return this.map;
   }

@@ -1,15 +1,13 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnChanges, SimpleChanges, AfterViewInit, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnChanges, SimpleChanges, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouteCardComponent, RouteCardData } from '../cards/route-card.component';
+import { RouteCardData } from '../cards/route-card.component';
 
 
 @Component({
   selector: 'app-route-panel',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouteCardComponent],
   templateUrl: './route-panel.component.html',
-  styleUrl: './route-panel.component.scss'
+  styleUrls: ['./route-panel.component.scss']
 })
 export class RoutePanelComponent implements OnChanges, AfterViewInit {
   @Input() collapsed: boolean = false;

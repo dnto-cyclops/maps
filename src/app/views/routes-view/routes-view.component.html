@@ -7,16 +7,16 @@
           <img src="assets/icons/filter.svg" alt="filtrar" class="filter-icon" />
           <span class="filter-label">Filtrar</span>
           <img 
-            [src]="filtersOpen() ? 'assets/icons/chevron-up.svg' : 'assets/icons/chevron-down.svg'" 
+            [src]="filtersOpen ? 'assets/icons/chevron-up.svg' : 'assets/icons/chevron-down.svg'" 
             class="chevron-icon" 
             alt="toggle" 
           />
         </div>
 
-        <div class="filters" *ngIf="filtersOpen()">
+        <div class="filters" *ngIf="filtersOpen">
           <div class="filter-group">
             <label>Estado</label>
-            <select [ngModel]="statusFilter()" (ngModelChange)="setStatus($event)">
+            <select [ngModel]="statusFilter" (ngModelChange)="setStatus($event)">
               <option value="Todos">Todos</option>
               <option value="active">Activa</option>
               <option value="stopped">Detenida</option>
@@ -31,27 +31,27 @@
               type="text" 
               class="search-input" 
               placeholder="Buscar placa..." 
-              [ngModel]="searchPlate()" 
+              [ngModel]="searchPlate" 
               (ngModelChange)="setSearchPlate($event)" />
           </div>
 
           <div class="filter-group">
             <label>Producto</label>
-            <select [ngModel]="selectedFruit()" (ngModelChange)="setFruit($event)">
+            <select [ngModel]="selectedFruit" (ngModelChange)="setFruit($event)">
               <option *ngFor="let fruit of uniqueFruits" [value]="fruit">{{ fruit }}</option>
             </select>
           </div>
 
           <div class="filter-group">
             <label>Proveedor</label>
-            <select [ngModel]="selectedProvider()" (ngModelChange)="setProvider($event)">
+            <select [ngModel]="selectedProvider" (ngModelChange)="setProvider($event)">
               <option *ngFor="let provider of uniqueProviders" [value]="provider">{{ provider }}</option>
             </select>
           </div>
 
           <div class="filter-group">
             <label>Destino</label>
-            <select [ngModel]="selectedDestination()" (ngModelChange)="setDestination($event)">
+            <select [ngModel]="selectedDestination" (ngModelChange)="setDestination($event)">
               <option *ngFor="let destination of uniqueDestinations" [value]="destination">{{ destination }}</option>
             </select>
           </div>
@@ -61,7 +61,7 @@
             <input 
               type="date" 
               class="date-input" 
-              [ngModel]="dateFromFilter()" 
+              [ngModel]="dateFromFilter" 
               (ngModelChange)="setDateFrom($event)" />
           </div>
 
@@ -70,23 +70,23 @@
             <input 
               type="date" 
               class="date-input" 
-              [ngModel]="dateToFilter()" 
+              [ngModel]="dateToFilter" 
               (ngModelChange)="setDateTo($event)" />
           </div>
         </div>
       </div>
     </div>
 
-    <div class="state-msg" *ngIf="loading()">
+    <div class="state-msg" *ngIf="loading">
       <div class="spinner"></div>
       <span>Cargando rutas...</span>
     </div>
 
-    <div class="state-msg error" *ngIf="error()">
+    <div class="state-msg error" *ngIf="error">
       <span>No se pudieron cargar las rutas.</span>
     </div>
 
-    <div class="routes-grid" *ngIf="!loading() && !error()">
+    <div class="routes-grid" *ngIf="!loading && !error">
       <app-route-card
         *ngFor="let route of filteredRoutes"
         [route]="route"

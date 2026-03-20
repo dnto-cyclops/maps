@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Subject, Observable, of, finalize, map, shareReplay, tap } from 'rxjs';
+import { Subject, Observable, of } from 'rxjs';
+import { map, tap, finalize, shareReplay } from 'rxjs/operators';
 import { ApiConfigService } from './api-config.service';
 import { RoutesRepositoryService } from './routes-repository.service';
 import { NotificationType } from '../enums/notification-type.enum';

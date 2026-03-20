@@ -1,17 +1,13 @@
 import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-sidebar',
-  standalone: true,
-  imports: [RouterLink, RouterLinkActive, CommonModule],
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss'
+  styleUrls: ['./sidebar.component.scss'] // Cambiado a plural 'styleUrls'
+  // ELIMINADO: standalone, imports
 })
 export class SidebarComponent {
   sidebarCollapsed = true;
-
 
   toggleSidebar() {
     this.sidebarCollapsed = !this.sidebarCollapsed;

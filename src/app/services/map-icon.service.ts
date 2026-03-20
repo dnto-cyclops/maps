@@ -127,11 +127,11 @@ export class MapIconService {
   }
 
   async loadFruitIcons(map: maplibregl.Map, slugs: string[]): Promise<void> {
-    const promises = slugs.flatMap(slug => [
+    const promises = slugs.reduce<Promise<void>[]>((acc, slug: string) => acc.concat([
       this.loadSvgFromAssets(map, `fruit-${slug}`,          `assets/icons/fruits/${slug}.svg`),      // ← fruits/
       this.loadSvgFromAssets(map, `fruit-${slug}-selected`, `assets/icons/fruits/${slug}-selected.svg`), // ← fruits/
-    ]);
-    await Promise.allSettled(promises);
+    ]), []);
+    await Promise.all(promises);
   }
 
   private loadSvgFromAssets(map: maplibregl.Map, iconId: string, url: string): Promise<void> {
@@ -142,6 +142,7 @@ export class MapIconService {
         try { if (!map.hasImage(iconId)) map.addImage(iconId, img); } catch {}
         resolve();
       };
+      img.onerror = () => resolve();
 
       img.src = url;
     });

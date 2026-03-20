@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 export class ApiConfigService {
   private apiBase: string;
   private deployedUrl = 'https://in-ova-maps.runasp.net';
-  private localUrl = 'https://in-ova-maps.runasp.net';
+  private localUrl = 'https://localhost:5001';
 
   constructor() {
     this.apiBase = this.getApiBase();

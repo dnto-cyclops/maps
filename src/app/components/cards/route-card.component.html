@@ -66,7 +66,7 @@
     <div class="progress-container">
       <div 
       class="progress-bar" 
-      [style.width.%]="route.progress ?? 0"
+      [style.width.%]="route.progress || 0"
       [class.active]="isStatus('active')" 
       [class.paused]="isStatus('paused')"
       [class.planned]="isStatus('planned')"
@@ -75,7 +75,7 @@
       ></div>
     </div>
     <div class="progress-label">
-      {{ route.progress ?? 0 }}% completado
+      {{ route.progress || 0 }}% completado
     </div>
   </div>
 

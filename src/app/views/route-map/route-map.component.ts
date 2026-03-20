@@ -1,8 +1,7 @@
 import { Component, OnInit, AfterViewInit, NgZone, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { UpdatesService } from '../../services/updates.service';
 import { RoutesService } from '../../services/routes.service';
-import { RoutePanelComponent, RouteCardData, RouteDetailsPanelComponent} from '../../components';
+import { RouteCardData } from '../../components/cards/route-card.component';
 import { 
   MapService, 
   CoordinateService, 
@@ -16,14 +15,11 @@ import maplibregl from 'maplibre-gl';
 import { NotificationType } from '../../enums/notification-type.enum';
 import { FruitIconService } from '../../services/fruit-icon.service';
 import { ActivatedRoute } from '@angular/router';
-import { RouteSummaryOverlayComponent } from '../../components';
 
 @Component({
-selector: 'app-route-map',
-standalone: true,
-imports: [CommonModule, RoutePanelComponent, RouteDetailsPanelComponent, RouteSummaryOverlayComponent],
+  selector: 'app-route-map',
   templateUrl: './route-map.component.html',
-  styleUrl: './route-map.component.scss',
+  styleUrls: ['./route-map.component.scss'],
 })
 export class RouteMapComponent implements OnInit, AfterViewInit {
 map: any;
@@ -105,28 +101,26 @@ constructor(
       this.addColombiaOutline();
 
       const slugs = this.fruitIconService.getAllSlugs();
-      await this.mapIconService.loadFruitIcons(this.map, slugs);
+      this.mapIconService.loadFruitIcons(this.map, slugs).catch(() => undefined);
       
       // Load existing active routes on startup (snapshot)
-      this.rs.snapshot().subscribe({
-        next: (list: any[]) => {
-          this.zone.run(() => {
-            this.loadingInitialSnapshot = true;
-            (list || []).forEach((r: any) => {
-              // Update meta first so panel data is available
-              this.upsertRouteMeta(r);
-              this.drawRoute(r);
-            });
-            console.log('RouteList after processing:', this.routeList);
-            this.loadingInitialSnapshot = false;
-            this.fitToVisibleRoutes();
-
-            const rId = this.activatedRoute.snapshot.queryParamMap.get('rId');
-            if (rId) {
-              setTimeout(() => this.selectRoute(rId), 300);
-            }
+      this.rs.snapshot().subscribe((list: any[]) => {
+        this.zone.run(() => {
+          this.loadingInitialSnapshot = true;
+          (list || []).forEach((r: any) => {
+            // Update meta first so panel data is available
+            this.upsertRouteMeta(r);
+            this.drawRoute(r);
           });
-        },
+          console.log('RouteList after processing:', this.routeList);
+          this.loadingInitialSnapshot = false;
+          this.fitToVisibleRoutes();
+
+          const rId = this.activatedRoute.snapshot.queryParamMap.get('rId');
+          if (rId) {
+            setTimeout(() => this.selectRoute(rId), 300);
+          }
+        });
       });
 
       // Connect to SSE for real-time updates
@@ -143,16 +137,14 @@ constructor(
             this.upsertRouteMeta(evt.data);
             this.rs.upsertRouteFromUpdate(evt);
             setTimeout(() => {
-              this.rs.snapshot().subscribe({
-                next: (list: any[]) => {
-                  this.zone.run(() => {
-                    const newRoute = list.find((r: any) => (r.rId || r.id) === rId);
-                    if (newRoute) {
-                      this.upsertRouteMeta(newRoute);
-                      this.rs.upsertRoute(newRoute);
-                    }
-                  });
-                }
+              this.rs.snapshot().subscribe((list: any[]) => {
+                this.zone.run(() => {
+                  const newRoute = list.find((r: any) => (r.rId || r.id) === rId);
+                  if (newRoute) {
+                    this.upsertRouteMeta(newRoute);
+                    this.rs.upsertRoute(newRoute);
+                  }
+                });
               });
             }, 1500);
           } else if (evt.type === 'route_updated' || evt.type === 'pos_update') {

@@ -1,33 +1,32 @@
-import { Component, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouteCardComponent, RouteCardData } from '../../components/cards/route-card.component';
 import { RoutesService } from '../../services/routes.service';
 import { UpdatesService } from '../../services/updates.service';
 import { NotificationType } from '../../enums/notification-type.enum';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 type FilterStatus = 'Todos' | 'active' | 'paused' | 'planned' | 'finished';
 
 
 @Component({
   selector: 'app-routes-view',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouteCardComponent],
   templateUrl: './routes-view.component.html',
-  styleUrl: './routes-view.component.scss'
+  styleUrls: ['./routes-view.component.scss']
 })
 export class RoutesViewComponent implements OnInit, OnDestroy {
-  statusFilter = signal<FilterStatus>('Todos');
-  searchPlate = signal<string>('');
-  selectedFruit = signal<string>('Todos');
-  selectedProvider = signal<string>('Todos');
-  selectedDestination = signal<string>('Todos');
-  dateFromFilter = signal<string>('');
-  dateToFilter = signal<string>('');
-  loading = signal(true);
-  error = signal(false);
-  filtersOpen = signal<boolean>(false);
+  statusFilter: FilterStatus = 'Todos';
+  searchPlate = '';
+  selectedFruit = 'Todos';
+  selectedProvider = 'Todos';
+  selectedDestination = 'Todos';
+  dateFromFilter = '';
+  dateToFilter = '';
+  loading = true;
+  error = false;
+  filtersOpen = false;
   private destroy$ = new Subject<void>();
 
   allRoutes: RouteCardData[] = [];
@@ -49,20 +48,20 @@ export class RoutesViewComponent implements OnInit, OnDestroy {
     const cached = this.rs.getCurrentRoutes();
     if (cached.length > 0) {
       this.allRoutes = cached.map(r => this.mapToCard(r));
-      this.loading.set(false);
+      this.loading = false;
     }
 
     this.rs.routes$
       .pipe(takeUntil(this.destroy$))
       .subscribe(list => {
         this.allRoutes = (list || []).map(r => this.mapToCard(r));
-        this.loading.set(false);
+        this.loading = false;
       });
 
     this.rs.snapshot().subscribe({
       error: () => {
-        this.error.set(true);
-        this.loading.set(false);
+        this.error = true;
+        this.loading = false;
       }
     });
 
@@ -107,50 +106,50 @@ export class RoutesViewComponent implements OnInit, OnDestroy {
   }
 
   private matchFilters(route: RouteCardData): boolean {
-    if (this.statusFilter() !== 'Todos') {
-      if (route.status !== this.statusFilter()) {
+    if (this.statusFilter !== 'Todos') {
+      if (route.status !== this.statusFilter) {
         return false;
       }
     }
 
-    if (this.searchPlate().trim()) {
+    if (this.searchPlate.trim()) {
       const plateLower = (route.plate || '').toLowerCase();
-      const searchLower = this.searchPlate().toLowerCase();
+      const searchLower = this.searchPlate.toLowerCase();
       if (!plateLower.includes(searchLower)) {
         return false;
       }
     }
 
-    if (this.selectedFruit() !== 'Todos') {
-      if ((route.load?.load || '') !== this.selectedFruit()) {
+    if (this.selectedFruit !== 'Todos') {
+      if ((route.load?.load || '') !== this.selectedFruit) {
         return false;
       }
     }
 
-    if (this.selectedProvider() !== 'Todos') {
-      if ((route.supplier || '') !== this.selectedProvider()) {
+    if (this.selectedProvider !== 'Todos') {
+      if ((route.supplier || '') !== this.selectedProvider) {
         return false;
       }
     }
 
-    if (this.selectedDestination() !== 'Todos') {
-      if ((route.route || '') !== this.selectedDestination()) {
+    if (this.selectedDestination !== 'Todos') {
+      if ((route.route || '') !== this.selectedDestination) {
         return false;
       }
     }
 
-    if (this.dateFromFilter() || this.dateToFilter()) {
+    if (this.dateFromFilter || this.dateToFilter) {
       const routeTimestamp = route.startTs || 0;
       
-      if (this.dateFromFilter()) {
-        const fromTimestamp = this.dateToTimestamp(this.dateFromFilter());
+      if (this.dateFromFilter) {
+        const fromTimestamp = this.dateToTimestamp(this.dateFromFilter);
         if (routeTimestamp < fromTimestamp) {
           return false;
         }
       }
 
-      if (this.dateToFilter()) {
-        const toTimestamp = this.dateToTimestamp(this.dateToFilter());
+      if (this.dateToFilter) {
+        const toTimestamp = this.dateToTimestamp(this.dateToFilter);
         if (routeTimestamp > toTimestamp + 86400) {
           return false;
         }
@@ -179,12 +178,12 @@ export class RoutesViewComponent implements OnInit, OnDestroy {
     return ['Todos', ...Array.from(destinations).sort()];
   }
 
-  setStatus(s: FilterStatus) { this.statusFilter.set(s); }
-  setSearchPlate(plate: string) { this.searchPlate.set(plate); }
-  setFruit(fruit: string) { this.selectedFruit.set(fruit); }
-  setProvider(provider: string) { this.selectedProvider.set(provider); }
-  setDestination(destination: string) { this.selectedDestination.set(destination); }
-  setDateFrom(date: string) { this.dateFromFilter.set(date); }
-  setDateTo(date: string) { this.dateToFilter.set(date); }
-  toggleFilters() { this.filtersOpen.set(!this.filtersOpen()); }
+  setStatus(s: string) { this.statusFilter = s as FilterStatus; }
+  setSearchPlate(plate: string) { this.searchPlate = plate; }
+  setFruit(fruit: string) { this.selectedFruit = fruit; }
+  setProvider(provider: string) { this.selectedProvider = provider; }
+  setDestination(destination: string) { this.selectedDestination = destination; }
+  setDateFrom(date: string) { this.dateFromFilter = date; }
+  setDateTo(date: string) { this.dateToFilter = date; }
+  toggleFilters() { this.filtersOpen = !this.filtersOpen; }
 }

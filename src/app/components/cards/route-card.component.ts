@@ -64,8 +64,8 @@ export function mapApiToRouteCardData(api: RouteApiResponse): RouteCardData {
 
 @Component({
   selector: 'app-route-card',
-  standalone: true,
-  imports: [CommonModule],
+  //standalone: true,
+  //imports: [CommonModule],
   templateUrl: './route-card.component.html',
   styleUrls: ['./route-card.component.scss']
 })

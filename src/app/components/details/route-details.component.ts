@@ -1,7 +1,7 @@
 import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RoutesService } from '../../services/routes.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 export interface RouteDetails {
   rId: string;
@@ -21,10 +21,8 @@ export interface RouteDetails {
 
 @Component({
   selector: 'app-route-details-panel',
-  standalone: true,
-  imports: [CommonModule],
   templateUrl: './route-details.component.html',
-  styleUrl: './route-details.component.scss'
+  styleUrls: ['./route-details.component.scss']
 })
 export class RouteDetailsPanelComponent implements OnInit, OnDestroy, OnChanges {
   @Input() panelCollapsed = false;
@@ -96,7 +94,13 @@ export class RouteDetailsPanelComponent implements OnInit, OnDestroy, OnChanges 
     const driverPhone = driverObj?.phone || data?.driverPhone || 'N/D';
     const startTs = data?.startTs;
     const date = startTs
-      ? new Date(startTs * 1000).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })
+      ? new Date(startTs * 1000).toLocaleString('es-CO', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
       : 'N/D';
     const segments: any[] = data?.segments || [];
     const lastStoppedSegment = [...segments].reverse().find((s: any) => 
