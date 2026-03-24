@@ -6,13 +6,34 @@
     [activeCount]="activeCount"
     [pausedCount]="pausedCount"
     (togglePanel)="togglePanel()"
-    (routeSelected)="selectFromList($event)">
+    (routeSelected)="selectFromList($event)"
+    (filteredRouteIdsChange)="onFilteredRouteIdsChange($event)">
   </app-route-panel>
   <div id="map"></div>
   <app-route-summary-overlay
     [panelCollapsed]="panelCollapsed"
   >
   </app-route-summary-overlay>
+
+  <div class="hovered-route-overlay" *ngIf="hoveredRouteData" [class.hovered-route-overlay--panel-open]="!panelCollapsed" [class.hovered-route-overlay--panel-closed]="panelCollapsed">
+    <div class="header">
+      <strong>{{hoveredRouteData.name || 'Ruta ' + hoveredRouteData.rId}}</strong>
+      <span>{{hoveredRouteData.status}}</span>
+    </div>
+    <div class="body">
+      <div><strong>Origen:</strong> {{hoveredRouteData.origin || 'N/D'}}</div>
+      <div><strong>Destino:</strong> {{hoveredRouteData.destination || 'N/D'}}</div>
+      <div *ngIf="hoveredRouteData.etaS"><strong>ETA:</strong> {{formatDuration(hoveredRouteData.etaS)}}</div>
+      <div><strong>Conductor:</strong> {{hoveredRouteData.driver || 'N/D'}}</div>
+      <div><strong>Placa:</strong> {{hoveredRouteData.plate || 'N/D'}}</div>
+      <div><strong>Estado:</strong> {{hoveredRouteData.status}}</div>
+      <div *ngIf="hoveredRouteData.lastReportTs"><strong>Último reporte:</strong> {{formatElapsed(hoveredRouteData.lastReportTs)}}</div>
+      <div><strong>Avance:</strong> {{hoveredRouteData.progress !== null ? hoveredRouteData.progress + '%' : 'N/D'}}</div>
+      <!--<div><strong>Ruta:</strong> {{hoveredRouteData.rId}}</div>-->
+      <div class="action-hint"><em>Click para seleccionar</em></div>
+    </div>
+  </div>
+
   <app-route-details-panel
     [panelCollapsed]="panelCollapsed"
     [routeData]="selectedRouteDetails">

@@ -24,10 +24,10 @@
   </div>
 
   <div class="filters" *ngIf="!collapsed">
-    <div class="filter-header">
+    <div class="filter-header" (click)="toggleFiltersVisibility()" role="button" tabindex="0" (keydown.enter)="toggleFiltersVisibility()" (keydown.space)="toggleFiltersVisibility()">
       <img src="assets/icons/filter.svg" class="filter-icon" /> 
       <span>Filtros</span>
-      <button class="toggle-filters-btn" (click)="toggleFiltersVisibility()" [attr.aria-expanded]="showFilters">
+      <button class="toggle-filters-btn" [attr.aria-expanded]="showFilters" type="button">
         <img [src]="showFilters ? 'assets/icons/chevron-up.svg' : 'assets/icons/chevron-down.svg'" class="chevron-icon" />
       </button>
     </div>
@@ -36,7 +36,7 @@
       <div class="control-group">
         <label>Estado</label>
         <div class="select-wrapper">
-          <select [value]="selectedStatus" (change)="onStatusChange($event)">
+          <select [ngModel]="selectedStatus" (ngModelChange)="onStatusChange($event)">
             <option *ngFor="let status of uniqueStatusOptions" [value]="status">{{ status }}</option>
           </select>
         </div>
@@ -44,7 +44,7 @@
       <div class="control-group">
         <label>Producto</label>
         <div class="select-wrapper">
-          <select [value]="selectedFruit" (change)="onFruitChange($any($event).target.value)">
+          <select [ngModel]="selectedFruit" (ngModelChange)="onFruitChange($event)">
             <option *ngFor="let fruit of uniqueFruits" [value]="fruit">{{ fruit }}</option>
           </select>
         </div>

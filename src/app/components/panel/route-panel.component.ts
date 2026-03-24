@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnChanges, SimpleChanges, AfterViewInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnChanges, SimpleChanges, AfterViewInit, DoCheck } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouteCardData } from '../cards/route-card.component';
@@ -9,7 +9,7 @@ import { RouteCardData } from '../cards/route-card.component';
   templateUrl: './route-panel.component.html',
   styleUrls: ['./route-panel.component.scss']
 })
-export class RoutePanelComponent implements OnChanges, AfterViewInit {
+export class RoutePanelComponent implements OnChanges, AfterViewInit, DoCheck {
   @Input() collapsed: boolean = false;
   @Input() routes: RouteCardData[] = [];
   @Input() selectedRouteId: string | null = null;
@@ -17,13 +17,15 @@ export class RoutePanelComponent implements OnChanges, AfterViewInit {
   @Input() pausedCount: number = 0;
 
   @Output() togglePanel = new EventEmitter<void>();
-  @Output() routeSelected = new EventEmitter<RouteCardData>();
+  @Output() routeSelected = new EventEmitter<RouteCardData | null>();
+  @Output() filteredRouteIdsChange = new EventEmitter<string[]>();
 
   @ViewChild('cardsContainer') cardsContainer!: ElementRef<HTMLDivElement>;
 
   showScrollUp = false;
   showScrollDown = true;
   showFilters = false;
+  private lastFilteredRouteIdsKey = '';
 
   selectedStatus: string = 'Todos';
   selectedFruit: string = 'Todos';
@@ -48,6 +50,20 @@ export class RoutePanelComponent implements OnChanges, AfterViewInit {
 
   onFruitChange(value: string) {
     this.selectedFruit = value;
+    this.clearSelectionIfNeeded();
+    this.emitFilteredRouteIds();
+  }
+
+  private hasActiveFilters(): boolean {
+    return this.selectedStatus !== 'Todos'
+      || this.selectedFruit !== 'Todos'
+      || !!this.dateFromFilter
+      || !!this.dateToFilter;
+  }
+
+  private clearSelectionIfNeeded() {
+    if (!this.selectedRouteId) return;
+    this.routeSelected.emit(null);
   }
 
   private matchFilters(route: RouteCardData): boolean {
@@ -96,18 +112,33 @@ export class RoutePanelComponent implements OnChanges, AfterViewInit {
     return ['Todos', ...Array.from(statuses).sort()];
   }
 
-  onStatusChange(event: any) {
-    this.selectedStatus = event.target.value;
+  onStatusChange(value: string) {
+    this.selectedStatus = value;
+    this.clearSelectionIfNeeded();
+    this.emitFilteredRouteIds();
   }
 
-  setDateFrom(date: string) { this.dateFromFilter = date; }
-  setDateTo(date: string) { this.dateToFilter = date; }
+  setDateFrom(date: string) {
+    this.dateFromFilter = date;
+    this.clearSelectionIfNeeded();
+    this.emitFilteredRouteIds();
+  }
+
+  setDateTo(date: string) {
+    this.dateToFilter = date;
+    this.clearSelectionIfNeeded();
+    this.emitFilteredRouteIds();
+  }
   toggleFiltersVisibility() {
     this.showFilters = !this.showFilters;
   }
 
   ngAfterViewInit() {
     this.scrollToSelectedRoute();
+  }
+
+  ngDoCheck() {
+    this.emitFilteredRouteIds();
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -119,6 +150,14 @@ export class RoutePanelComponent implements OnChanges, AfterViewInit {
     if (changes['selectedRouteId'] || changes['routes'] || changes['collapsed']) {
       setTimeout(() => this.scrollToSelectedRoute(), 0);
     }
+
+    if (changes['collapsed'] && !this.collapsed && this.hasActiveFilters()) {
+      this.showFilters = true;
+    }
+
+    if (changes['routes']) {
+      this.emitFilteredRouteIds();
+    }
   }
 
   onTogglePanel() {
@@ -126,7 +165,21 @@ export class RoutePanelComponent implements OnChanges, AfterViewInit {
   }
 
   onRouteSelected(route: RouteCardData) {
+    if (this.selectedRouteId === route.rId) {
+      this.routeSelected.emit(null);
+      return;
+    }
+
     this.routeSelected.emit(route);
+  }
+
+  private emitFilteredRouteIds() {
+    const filteredRouteIds = this.filteredRoutes.map(route => route.rId);
+    const key = filteredRouteIds.join('|');
+    if (key === this.lastFilteredRouteIdsKey) return;
+
+    this.lastFilteredRouteIdsKey = key;
+    this.filteredRouteIdsChange.emit(filteredRouteIds);
   }
 
   onScroll() {

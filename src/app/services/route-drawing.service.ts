@@ -39,8 +39,12 @@ constructor(
   private currentClickPopup: maplibregl.Popup | null = null;
 
 
-  setRouteLoad(rId: string, load: string | undefined) {
-    if (load && typeof load === 'string') this.routeLoadMap.set(rId, load);
+  setRouteLoad(rId: string, load: string | { load?: string } | undefined | null) {
+    const loadValue = typeof load === 'string'
+      ? load
+      : (typeof load?.load === 'string' ? load.load : undefined);
+
+    if (loadValue) this.routeLoadMap.set(rId, loadValue);
   }
   /**
    * Parse route coordinates from various formats
@@ -168,7 +172,7 @@ constructor(
         source: sourceId,
         layout: { 
           'icon-image': resolvedIcon, 
-          'icon-anchor': iconId === 'vehicle-icon' ? 'bottom' : 'bottom', 
+          'icon-anchor': iconId === 'vehicle-icon' ? 'center' : 'bottom', 
           'icon-size': iconSize,
           'icon-allow-overlap': true,
         },
@@ -222,18 +226,26 @@ constructor(
   /**
    * Calculate destination position with offset if needed
    */
-  calculateDestination(route: any, endCoord: [number, number] | null): [number, number] | null {
+  calculateDestination(route: any, _endCoord: [number, number] | null): [number, number] | null {
     // Explicit destination preferred
     const providedDest = route.dest && Array.isArray(route.dest) && route.dest.length >= 2
       ? this.coordinateService.toLngLat(route.dest)
       : null;
 
     if (providedDest) return providedDest;
-    
-    // Offset from end coordinate
-    if (endCoord) {
-      return [endCoord[0] + 0.0002, endCoord[1]];
-    }
+
+    const altDest = Array.isArray(route?.d) && route.d.length >= 2
+      ? this.coordinateService.toLngLat(route.d)
+      : null;
+
+    if (altDest) return altDest;
+
+    const destObj = route?.dest && typeof route.dest === 'object' ? route.dest : null;
+    const destObjLatLong = Array.isArray(destObj?.latlong) && destObj.latlong.length >= 2
+      ? this.coordinateService.toLngLat(destObj.latlong)
+      : null;
+
+    if (destObjLatLong) return destObjLatLong;
     
     return null;
   }
@@ -246,70 +258,36 @@ constructor(
     const existingHandlers = this.routeTooltipHandlers.get(layerId);
     if (existingHandlers) {
       map.off('mouseenter', layerId, existingHandlers.mouseenter);
+      if (existingHandlers.mousemove) {
+        map.off('mousemove', layerId, existingHandlers.mousemove);
+      }
       map.off('mouseleave', layerId, existingHandlers.mouseleave);
       map.off('click', layerId, existingHandlers.click);
     }
 
+    const showHoverCard = (e: any) => {
+      map.getCanvas().style.cursor = 'pointer';
+
+      if (this.onVehicleHoverChanged) {
+        this.onVehicleHoverChanged(true, rId);
+      }
+    };
+
     // Create new handlers
     const handlers = {
-      mouseenter: (e: any) => {
-        map.getCanvas().style.cursor = 'pointer';
-        
-        // if (this.currentTooltip) {
-        //   this.currentTooltip.remove();
-        // }
-        
-        const coordinates = (e.features![0].geometry as any).coordinates.slice() as [number, number];
-        const tooltipContent = this.createClickPopupContent(rId);
-        
-        // this.currentTooltip = new maplibregl.Popup({
-        //   closeButton: false,
-        //   closeOnClick: false,
-        //   className: 'vehicle-hover-tooltip',
-        //   offset: {
-        //     'bottom': [0, -48],
-        //   } as any
-        // })
-        // .setLngLat(coordinates)
-        // .setHTML(tooltipContent)
-        // .addTo(map);
-      },
+      mouseenter: showHoverCard,
+      mousemove: showHoverCard,
 
       mouseleave: () => {
         map.getCanvas().style.cursor = '';
-        // if (this.currentTooltip) {
-        //   this.currentTooltip.remove();
-        //   this.currentTooltip = null;
-        // }
+        if (this.onVehicleHoverChanged) {
+          this.onVehicleHoverChanged(false, rId);
+        }
       },
 
       click: (e: any) => {
         console.log(`🖱️ Vehicle clicked:`, { rId, layerId, event: e });
-        
-        // if (this.currentTooltip) {
-        //   this.currentTooltip.remove();
-        //   this.currentTooltip = null;
-        // }
 
-        const coordinates = (e.features![0].geometry as any).coordinates.slice() as [number, number];
-
-        // if (this.currentClickPopup) {
-        //   this.currentClickPopup.remove();
-        //   this.currentClickPopup = null;
-        // }
-
-        // this.currentClickPopup = new maplibregl.Popup({
-        //   closeButton: true,
-        //   closeOnClick: false,
-        //   className: 'vehicle-click-popup',
-        //   offset: {
-        //     'bottom': [0, -48],
-        //   } as any
-        // })
-        // .setLngLat(coordinates)
-        // .setHTML(this.createClickPopupContent(rId))
-        // .addTo(map)
-        
         // Select this route
         this.selectVehicle(map, rId);
         
@@ -324,89 +302,14 @@ constructor(
     };
 
     // Add event listeners
+    console.log(`[route-drawing] Binding interact events for: ${layerId} rId=${rId}`);
     map.on('mouseenter', layerId, handlers.mouseenter);
+    map.on('mousemove', layerId, handlers.mousemove);
     map.on('mouseleave', layerId, handlers.mouseleave);
     map.on('click', layerId, handlers.click);
 
     // Store handlers for cleanup
     this.routeTooltipHandlers.set(layerId, handlers);
-  }
-
-  /**
-   * Create tooltip content for vehicle
-   */
-  private createClickPopupContent(rId: string): string {
-    let routeData: any = null;
-    if (this.routeDataProvider) {
-      routeData = this.routeDataProvider(rId);
-    }
-
-    const routeName = routeData?.name || `Ruta ${rId}`;
-    const status = routeData?.status || 'active';
-
-    const statusLabels: Record<string, string> = {
-      active: 'Activa', paused: 'En pausa', planned: 'Programada', finished: 'Finalizado'
-    };
-    const statusLabel = statusLabels[status] || status;
-
-    return `
-      <div class="click-popup">
-        <div class="click-popup__header">
-          <strong class="click-popup__title">${routeName}</strong>
-          <span class="click-popup__badge click-popup__badge--${status}">${statusLabel}</span>
-        </div>
-        <div class="click-popup__body">
-          <div class="click-popup__row">
-            <span class="click-popup__label">ID:</span>
-            <span class="click-popup__value">${rId}</span>
-          </div>
-        </div>
-      </div>
-      <style>
-        .vehicle-click-popup .maplibregl-popup-content {
-          padding: 12px 16px;
-          border-radius: 10px;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-          font-family: sans-serif;
-          min-width: 180px;
-          border: 1px solid #e5e7eb;
-        }
-        .vehicle-click-popup .maplibregl-popup-tip {
-          border-top-color: white;
-        }
-        .click-popup__header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8px;
-          padding-bottom: 8px;
-          border-bottom: 1px solid #f3f4f6;
-        }
-        .click-popup__title {
-          font-size: 13px;
-          color: #111827;
-        }
-        .click-popup__badge {
-          font-size: 10px;
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-weight: 500;
-        }
-        .click-popup__badge--active   { background: #dcfce7; color: #16a34a; }
-        .click-popup__badge--paused   { background: #fed7aa; color: #ea580c; }
-        .click-popup__badge--planned  { background: #dbeafe; color: #2563eb; }
-        .click-popup__badge--finished { background: #f3f4f6; color: #6b7280; }
-        .click-popup__row {
-          display: flex;
-          justify-content: space-between;
-          font-size: 11px;
-          margin: 4px 0;
-          color: #374151;
-        }
-        .click-popup__label { color: #9ca3af; }
-        .click-popup__value { font-weight: 500; }
-      </style>
-    `;
   }
 
   /**
@@ -470,6 +373,9 @@ constructor(
     this.routeTooltipHandlers.forEach((handlers, layerId) => {
       if (map.getLayer(layerId)) {
         map.off('mouseenter', layerId, handlers.mouseenter);
+        if (handlers.mousemove) {
+          map.off('mousemove', layerId, handlers.mousemove);
+        }
         map.off('mouseleave', layerId, handlers.mouseleave);
         map.off('click', layerId, handlers.click);
       }
@@ -505,6 +411,8 @@ constructor(
    * Callback for vehicle selection
    */
   public onVehicleSelected?: (rId: string) => void;
+
+  public onVehicleHoverChanged?: (isHovering: boolean, rId: string) => void;
 
   /**
    * Set route data provider for tooltips

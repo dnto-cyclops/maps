@@ -28,7 +28,9 @@ routeList: RouteCardData[] = [];
 selectedRouteId: string | null = null;
 activeCount = 0;
 pausedCount = 0;
+hoveredRouteData: any = null;
 private loadingInitialSnapshot = false;
+private routeLastReportTs: { [rId: string]: number } = {};
 private selectedDetailLayerIds: string[] = [];
 private selectedDetailSourceIds: string[] = [];
 selectedRouteDetails: any = null;
@@ -39,6 +41,8 @@ sidebarCollapsed = false;
 
 // clustering configuration
 clusteringEnabled = true;
+  private enabledRouteIds = new Set<string>();
+  private hasFilterState = false;
 
 constructor(
   private us: UpdatesService, 
@@ -62,26 +66,18 @@ constructor(
     };
 
     // Configure route data provider for enhanced tooltips
-    this.routeClusteringService.setRouteDataProvider((rId: string) => {
-      const routeData = this.routes[rId];
-      const metaData = this.routeList.find(r => r.rId === rId);
-      
-      return {
-        status: metaData?.status || 'active',
-        dest: routeData?.dest || metaData?.dest,
-      };
-    });
+    this.routeClusteringService.setRouteDataProvider((rId: string) => this.getRouteHoverData(rId));
 
     // Configure route drawing service for vehicle tooltips
-    this.routeDrawingService.setRouteDataProvider((rId: string) => {
-      const routeData = this.routes[rId];
-      const metaData = this.routeList.find(r => r.rId === rId);
-      
-      return {
-        status: metaData?.status || 'active',
-        dest: routeData?.dest || metaData?.dest,
-      };
-    });
+    this.routeDrawingService.setRouteDataProvider((rId: string) => this.getRouteHoverData(rId));
+
+    this.routeDrawingService.onVehicleHoverChanged = (isHovering: boolean, rId: string) => {
+      this.zone.run(() => this.handleRouteHover(isHovering, rId));
+    };
+
+    this.routeClusteringService.onRouteHoverChanged = (isHovering: boolean, rId: string) => {
+      this.zone.run(() => this.handleRouteHover(isHovering, rId));
+    };
 
     // Configure vehicle selection callback
     this.routeDrawingService.onVehicleSelected = (routeId: string) => {
@@ -101,7 +97,7 @@ constructor(
       this.addColombiaOutline();
 
       const slugs = this.fruitIconService.getAllSlugs();
-      this.mapIconService.loadFruitIcons(this.map, slugs).catch(() => undefined);
+      await this.mapIconService.loadFruitIcons(this.map, slugs);
       
       // Load existing active routes on startup (snapshot)
       this.rs.snapshot().subscribe((list: any[]) => {
@@ -119,6 +115,14 @@ constructor(
           const rId = this.activatedRoute.snapshot.queryParamMap.get('rId');
           if (rId) {
             setTimeout(() => this.selectRoute(rId), 300);
+          }
+        });
+      });
+
+      this.map.on('zoomend', () => {
+        this.zone.run(() => {
+          if (this.clusteringEnabled) {
+            this.updateClustering();
           }
         });
       });
@@ -162,14 +166,16 @@ constructor(
   private upsertRouteMeta(r: any) {
     const rId = r.rId || r.id || r.routeId;
     if (!rId) return;
+
+    this.routeLastReportTs[rId] = this.resolveReportTimestamp(r) || this.routeLastReportTs[rId] || Date.now();
     
     const existingIdx = this.routeList.findIndex(x => x.rId === rId);
-    const existing = existingIdx >= 0 ? this.routeList[existingIdx] : null;
+    const existing: any = existingIdx >= 0 ? this.routeList[existingIdx] : null;
     const entry = this.routes[rId];
     
     const load = r.load || existing?.load || null;
 
-    if (load?.load) this.routeDrawingService.setRouteLoad(rId, load.load);
+    this.routeDrawingService.setRouteLoad(rId, load);
       const destObj = r.dest && typeof r.dest === 'object' && !Array.isArray(r.dest)
       ? r.dest
       : (existingIdx >= 0 ? this.routeList[existingIdx].dest : null);
@@ -191,8 +197,12 @@ constructor(
       dest: destObj,
       start,
       current,
+      origin: r.origin?.name || r.origin || r.provider || existing?.origin || existing?.supplier || 'N/D',
       supplier: r.provider || (existingIdx >= 0 ? this.routeList[existingIdx].supplier : null),
       plate: r.vehicle || (existingIdx >= 0 ? this.routeList[existingIdx].plate : null),
+      driver: (typeof r.driver === 'object' ? r.driver?.driver : r.driver) || existing?.driver || 'N/D',
+      progress: typeof r.progress === 'number' ? r.progress : (existing?.progress ?? null),
+      etaS: r.dest?.estimated_durationS || existing?.etaS || null,
       startTs: r.startTs || (existingIdx >= 0 ? this.routeList[existingIdx].startTs : null),
     };
     
@@ -207,6 +217,73 @@ constructor(
     this.cdr.detectChanges();
   }
 
+  private getRouteHoverData(rId: string) {
+    const routeData = this.routes[rId];
+    const metaData: any = this.routeList.find(r => r.rId === rId) || {};
+
+    return {
+      rId,
+      name: metaData.name || `Ruta ${rId}`,
+      status: metaData.status || routeData?.status || 'active',
+      origin: metaData.origin || metaData.supplier || 'N/D',
+      destination: metaData.dest?.name || metaData.route || 'N/D',
+      etaS: metaData.dest?.estimated_durationS || metaData.etaS,
+      driver: metaData.driver || 'N/D',
+      plate: metaData.plate || 'N/D',
+      progress: typeof metaData.progress === 'number' ? metaData.progress : null,
+      lastReportTs: this.routeLastReportTs[rId] || null
+    };
+  }
+
+  private handleRouteHover(isHovering: boolean, rId: string) {
+    if (isHovering && rId) {
+      this.hoveredRouteData = this.getRouteHoverData(rId);
+      this.cdr.detectChanges();
+    } else {
+      this.hoveredRouteData = null;
+      this.cdr.detectChanges();
+    }
+  }
+
+  formatDuration(seconds?: number): string {
+    if (!seconds || typeof seconds !== 'number') return 'N/D';
+
+    const totalMinutes = Math.round(seconds / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours > 0) {
+      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    }
+    return `${minutes}m`;
+  }
+
+  formatElapsed(timestampMs?: number): string {
+    if (!timestampMs || typeof timestampMs !== 'number') return 'N/D';
+
+    const diffMs = Date.now() - timestampMs;
+    if (diffMs < 0) return 'N/D';
+
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 60) return `${diffSec}s`;
+
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m`;
+
+    const hours = Math.floor(diffMin / 60);
+    const mins = diffMin % 60;
+    return `${hours}h ${mins}m`;
+  }
+
+  private resolveReportTimestamp(data: any): number | null {
+    if (!data) return null;
+
+    const rawTs = data.ts ?? data.updatedAt ?? data.updateTs ?? data.lastReportTs ?? data.lastSeenTs;
+    if (typeof rawTs !== 'number') return null;
+
+    return rawTs > 1e12 ? rawTs : rawTs * 1000;
+  }
+
   private updateCounters() {
     this.activeCount = this.routeList.filter(r => (r.status || 'active') === 'active').length;
     this.pausedCount = this.routeList.filter(r => (r.status || 'stopped') === 'stopped').length;
@@ -216,7 +293,7 @@ constructor(
     const rId = route.rId || route.id || route.routeId;
     if (!rId) return;
     
-    const load = route.loadInfo?.load || route.load || 'papaya';
+    const load = route.loadInfo?.load || route.load;
     this.routeDrawingService.setRouteLoad(rId, load);
     
     // Parse coordinates using service
@@ -387,10 +464,25 @@ constructor(
     const selectedId = this.selectedRouteId;
 
     Object.keys(this.routes).forEach(rId => {
-      const visibility: 'visible' | 'none' = selectedId === rId ? 'visible' : 'none';
-      this.setLayerVisibility(`layer-${rId}`, visibility);
-      this.setLayerVisibility(`layer-start-${rId}`, visibility);
-      this.setLayerVisibility(`layer-dest-${rId}`, visibility);
+      const isEnabledByFilter = !this.hasFilterState || this.enabledRouteIds.has(rId);
+      const isSelected = selectedId === rId;
+      const isClusteredAndCollapsed =
+        this.clusteringEnabled &&
+        !selectedId &&
+        this.routeClusteringService.isRouteInCluster(rId) &&
+        !this.routeClusteringService.isRouteInExpandedCluster(rId);
+      const detailVisibility: 'visible' | 'none' = isSelected ? 'visible' : 'none';
+      const vehicleVisibility: 'visible' | 'none' =
+        isSelected
+          ? 'visible'
+          : (!selectedId && isEnabledByFilter && !isClusteredAndCollapsed)
+            ? 'visible'
+            : 'none';
+
+      this.setLayerVisibility(`layer-${rId}`, detailVisibility);
+      this.setLayerVisibility(`layer-start-${rId}`, detailVisibility);
+      this.setLayerVisibility(`layer-dest-${rId}`, detailVisibility);
+      this.setLayerVisibility(`layer-vehicle-${rId}`, vehicleVisibility);
     });
   }
 
@@ -498,91 +590,149 @@ constructor(
 
     const recommendedRoutes = this.normalizeRecommendedRoutes(payload);
 
-    if (segments.length > 0) {
+    // Resolve best traveled polyline: hybrid > snapped > real
+    const traveledPolylineObj = payload?.progress?.traveledPolyline;
+    const traveledPolylineStr = typeof traveledPolylineObj === 'string'
+      ? traveledPolylineObj
+      : (traveledPolylineObj?.hybrid || traveledPolylineObj?.snapped || traveledPolylineObj?.real);
+    const traveledPolyline = traveledPolylineStr || payload?.realPolyline || payload?.polyline;
+    const traveledCoords = this.routeDrawingService.parseRouteCoordinates({ polyline: traveledPolyline });
+
+    if (traveledCoords.length > 1) {
+      // Hide the base route line (snapshot) — replaced by the hybrid traveled line
+      this.setLayerVisibility(`layer-${routeId}`, 'none');
+
+      this.drawPolylineLayer(
+        `selected-traveled-${routeId}`,
+        `selected-traveled-layer-${routeId}`,
+        traveledCoords,
+        {
+          'line-color': '#306C2D',
+          'line-width': 5,
+          'line-opacity': 0.95
+        }
+      );
+
+      // Snap each stopped segment's raw GPS start point to the hybrid polyline and draw marker
+      segments.forEach((segment: any, idx: number) => {
+        if ((segment?.type || '').toLowerCase() !== 'stopped') return;
+        const rawCoords = this.routeDrawingService.parseRouteCoordinates({ polyline: segment?.polyline });
+        if (rawCoords.length < 1) return;
+        const snappedPoint = this.snapPointToPolyline(rawCoords[0] as [number, number], traveledCoords);
+        this.drawStopMarker(routeId, idx, snappedPoint);
+      });
+
+      // Draw remaining route to destination from progress.remaining (blue dotted)
+      const remaining = payload?.progress?.remaining || {};
+      const firstRemainingProvider = Object.keys(remaining)[0];
+      const remainingPolyline = firstRemainingProvider ? remaining[firstRemainingProvider]?.remainingPolyline : null;
+      if (remainingPolyline) {
+        const remainingCoords = this.routeDrawingService.parseRouteCoordinates({ polyline: remainingPolyline });
+        if (remainingCoords.length > 1) {
+          this.drawPolylineLayer(
+            `selected-remaining-${routeId}`,
+            `selected-remaining-layer-${routeId}`,
+            remainingCoords,
+            {
+              'line-color': '#2563EB',
+              'line-width': 5,
+              'line-opacity': 0.85,
+              'line-dasharray': [2, 2]
+            }
+          );
+        }
+      }
+    } else if (segments.length > 0) {
+      // Fallback: no hybrid polyline available, use all segment lines
       segments.forEach((segment: any, idx: number) => {
         const coords = this.routeDrawingService.parseRouteCoordinates({ polyline: segment?.polyline });
         if (coords.length < 2) return;
-
         const isStopped = (segment?.type || '').toLowerCase() === 'stopped';
         const sourceId = `selected-segment-${routeId}-${idx}`;
         const layerId = `selected-segment-layer-${routeId}-${idx}`;
-
-        this.drawPolylineLayer(
-          sourceId,
-          layerId,
-          coords,
-          {
-            'line-color': isStopped ? '#BE0000' : '#306C2D',
-            'line-width': isStopped ? 5 : 4,
-            'line-opacity': 0.95
-          }
-        );
-
+        this.drawPolylineLayer(sourceId, layerId, coords, {
+          'line-color': isStopped ? '#BE0000' : '#306C2D',
+          'line-width': isStopped ? 5 : 4,
+          'line-opacity': 0.95
+        });
         if (isStopped) {
-          const stopPoint = coords[0] as [number, number];
-          this.drawStopMarker(routeId, idx, stopPoint);
+          this.drawStopMarker(routeId, idx, coords[0] as [number, number]);
         }
       });
-    } else {
-      const traveledPolyline = payload?.progress?.traveledPolyline || payload?.realPolyline || payload?.polyline;
-      const traveledCoords = this.routeDrawingService.parseRouteCoordinates({ polyline: traveledPolyline });
 
-      if (traveledCoords.length > 1) {
-        this.drawPolylineLayer(
-          `selected-traveled-${routeId}`,
-          `selected-traveled-layer-${routeId}`,
-          traveledCoords,
-          {
-            'line-color': '#306C2D',
-            'line-width': 5,
-            'line-opacity': 0.95
-          }
-        );
+      // Draw recommended route as blue dotted line (fallback when no hybrid)
+      const allProviderNames = Object.keys(recommendedRoutes);
+      const googleProvider = allProviderNames.find(k => k.toLowerCase().includes('google'));
+      const selectedProvider = googleProvider ?? allProviderNames[0];
+
+      if (selectedProvider) {
+        const variants = Array.isArray(recommendedRoutes[selectedProvider]) ? recommendedRoutes[selectedProvider] : [];
+        const providerKey = selectedProvider.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+        variants.forEach((variant: any, idx: number) => {
+          const coords = this.routeDrawingService.parseRouteCoordinates({ polyline: variant?.polyline });
+          if (coords.length < 2) return;
+
+          this.drawPolylineLayer(
+            `selected-rec-${providerKey}-${routeId}-${idx}`,
+            `selected-rec-layer-${providerKey}-${routeId}-${idx}`,
+            coords,
+            {
+              'line-color': '#2563EB',
+              'line-width': 5,
+              'line-opacity': 0.85,
+              'line-dasharray': [2, 2]
+            }
+          );
+        });
       }
     }
+  }
 
-    const allProviderNames = Object.keys(recommendedRoutes);
-    const googleProvider = allProviderNames.find(k => k.toLowerCase().includes('google'));
-    const selectedProvider = googleProvider ?? allProviderNames[0];
-
-    if (selectedProvider) {
-      const variants = Array.isArray(recommendedRoutes[selectedProvider]) ? recommendedRoutes[selectedProvider] : [];
-      const providerKey = selectedProvider.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-
-      variants.forEach((variant: any, idx: number) => {
-        const coords = this.routeDrawingService.parseRouteCoordinates({ polyline: variant?.polyline });
-        if (coords.length < 2) return;
-
-        this.drawPolylineLayer(
-          `selected-rec-${providerKey}-${routeId}-${idx}`,
-          `selected-rec-layer-${providerKey}-${routeId}-${idx}`,
-          coords,
-          {
-            'line-color': '#2563EB',
-            'line-width': 5,
-            'line-opacity': 0.85,
-            'line-dasharray': [2, 2]
-          }
-        );
-      });
+  private snapPointToPolyline(point: [number, number], polyline: number[][]): [number, number] {
+    let minDistSq = Infinity;
+    let closest: [number, number] = polyline[0] as [number, number];
+    for (let i = 0; i < polyline.length - 1; i++) {
+      const a = polyline[i] as [number, number];
+      const b = polyline[i + 1] as [number, number];
+      const ax = b[0] - a[0], ay = b[1] - a[1];
+      const lenSq = ax * ax + ay * ay;
+      const t = lenSq > 0 ? Math.max(0, Math.min(1, ((point[0] - a[0]) * ax + (point[1] - a[1]) * ay) / lenSq)) : 0;
+      const cx = a[0] + t * ax, cy = a[1] + t * ay;
+      const distSq = (point[0] - cx) * (point[0] - cx) + (point[1] - cy) * (point[1] - cy);
+      if (distSq < minDistSq) {
+        minDistSq = distSq;
+        closest = [cx, cy];
+      }
     }
+    return closest;
   }
 
   /**
    * Update route clustering based on current vehicle positions
    */
   private updateClustering() {
-    if (!this.map || !this.clusteringEnabled) return;
-    
-    this.routeClusteringService.clusterRoutes(this.map, this.routes);
+    if (!this.map || !this.clusteringEnabled || !!this.selectedRouteId) return;
+
+    const routesToCluster: { [rId: string]: RouteData } = {};
+    Object.keys(this.routes).forEach(rId => {
+      if (this.hasFilterState && !this.enabledRouteIds.has(rId)) return;
+      routesToCluster[rId] = this.routes[rId];
+    });
+
+    this.routeClusteringService.clusterRoutes(this.map, routesToCluster);
+    this.syncRouteVisualState();
   }
 
-  private fitToVisibleRoutes() {
+  private fitToVisibleRoutes(routeIds?: Set<string>) {
     if (!this.map) return;
 
     const allPoints: [number, number][] = [];
 
-    Object.values(this.routes).forEach((entry: RouteData) => {
+    Object.keys(this.routes).forEach(rId => {
+      if (routeIds && routeIds.size > 0 && !routeIds.has(rId)) return;
+
+      const entry = this.routes[rId];
       if (entry.currentVehiclePos && entry.currentVehiclePos.length >= 2) {
         allPoints.push([entry.currentVehiclePos[0], entry.currentVehiclePos[1]]);
       }
@@ -611,40 +761,91 @@ constructor(
    */
   private selectRoute(routeId: string) {
     console.log(`🎯 Selecting route: ${routeId}`);
-    
-    // Check if clustering is enabled and route is in a cluster
+
+    let clusterCenter: [number, number] | null = null;
     if (this.clusteringEnabled) {
-      const wasInCluster = this.routeClusteringService.expandClusterContainingRoute(this.map, routeId);
-      if (wasInCluster) {
-        console.log(`📦 Auto-expanded cluster containing route: ${routeId}`);
-        // Wait a bit for the expansion animation to complete before continuing
-        setTimeout(() => {
-          this.finalizeRouteSelection(routeId);
-        }, 500);
-        return;
+      clusterCenter = this.routeClusteringService.getClusterPositionByRouteId(routeId);
+    }
+
+    // Always clear all clusters when selecting a route so only the selected
+    // route remains visible on the map (covers card click, vehicle click and
+    // cluster-vehicle click in one place).
+    if (this.clusteringEnabled) {
+      this.routeClusteringService.clearClusters(this.map);
+    }
+
+    this.finalizeRouteSelection(routeId, clusterCenter);
+  }
+
+  private clearRouteSelection(recluster: boolean = true) {
+    const previouslySelectedRouteId = this.selectedRouteId;
+    this.selectedRouteId = null;
+    this.rs.selectRoute('');
+    this.clearSelectedRouteDetailLayers();
+    this.selectedRouteDetails = null;
+    this.routeDrawingService.setSelectedRoute(null);
+
+    if (previouslySelectedRouteId) {
+      const previousEntry = this.routes[previouslySelectedRouteId];
+      if (previousEntry?.coords?.length > 1) {
+        this.routeDrawingService.drawRouteLine(this.map, previouslySelectedRouteId, previousEntry.coords);
+      }
+      const previousPos = previousEntry?.currentVehiclePos || previousEntry?.coords?.[previousEntry.coords.length - 1];
+      if (previousPos) {
+        this.placeOrMoveVehicle(previouslySelectedRouteId, previousPos);
       }
     }
 
-    // Route is not in cluster, select normally
-    this.finalizeRouteSelection(routeId);
+    this.syncRouteVisualState();
+
+    if (recluster && this.clusteringEnabled) {
+      this.updateClustering();
+    }
   }
 
   /**
    * Finalize route selection after cluster expansion (if needed)
    */
-  private finalizeRouteSelection(routeId: string) {
+  private finalizeRouteSelection(routeId: string, clusterCenter: [number, number] | null = null) {
     this.selectedRouteId = routeId;
     this.rs.selectRoute(routeId);
     this.clearSelectedRouteDetailLayers();
     this.selectedRouteDetails = null;
+    const entry = this.routes[routeId];
+    const currentPos = entry?.currentVehiclePos || entry?.coords?.[entry.coords.length - 1] || null;
+    const displayPos = clusterCenter || currentPos;
+
+    if (entry?.coords?.length > 1) {
+      const coordsToRender = [...entry.coords];
+      const lastCoord = coordsToRender[coordsToRender.length - 1];
+      if (
+        displayPos &&
+        (!lastCoord || lastCoord[0] !== displayPos[0] || lastCoord[1] !== displayPos[1])
+      ) {
+        coordsToRender.push([displayPos[0], displayPos[1]]);
+      }
+
+      this.routeDrawingService.drawRouteLine(this.map, routeId, coordsToRender);
+    }
+
+    if (displayPos) {
+      this.placeOrMoveVehicle(routeId, displayPos);
+    }
+
     // Update vehicle selection in drawing service
     this.routeDrawingService.setSelectedRoute(routeId);
     this.syncRouteVisualState();
-    
-    const entry = this.routes[routeId];
-    const pos = entry?.currentVehiclePos || entry?.coords?.[entry.coords.length - 1];
+
+    const pos = displayPos;
     if (pos) {
-      this.mapService.flyTo(pos as [number, number], 16);
+      this.map.flyTo({
+        center: pos as [number, number],
+        zoom: 14,
+        speed: 0.1,
+        curve: 1.2,
+        duration: 900,
+        essential: true
+      });
     }
 
     // Get route details
@@ -652,6 +853,17 @@ constructor(
       next: (details: any) => {
         const fromSnapshot = this.routeList.find(r => r.rId === routeId);
         this.selectedRouteDetails = { ...(fromSnapshot || {}), ...(details || {}) };
+
+        const remaining = details?.progress?.remaining || {};
+        const firstProvider = Object.keys(remaining)[0];
+        const progressPercent = firstProvider != null ? remaining[firstProvider]?.progressPercent : undefined;
+        if (progressPercent !== undefined) {
+          const idx = this.routeList.findIndex(r => r.rId === routeId);
+          if (idx >= 0) {
+            this.routeList[idx] = { ...this.routeList[idx], progress: progressPercent };
+          }
+        }
+
         this.renderSelectedRouteDetails(routeId, details);
         this.cdr.detectChanges();
       },
@@ -695,9 +907,34 @@ constructor(
   /**
    * Handle route selection from panel list
    */
-  selectFromList(route: RouteCardData) {
+  selectFromList(route: RouteCardData | null) {
+    if (!route || this.selectedRouteId === route.rId) {
+      this.clearRouteSelection(true);
+      return;
+    }
+
     console.log(`📋 Route selected from panel: ${route.rId}`);
     this.selectRoute(route.rId);
+  }
+
+  onFilteredRouteIdsChange(routeIds: string[]) {
+    this.hasFilterState = true;
+    this.enabledRouteIds = new Set(routeIds || []);
+
+    if (this.selectedRouteId && !this.enabledRouteIds.has(this.selectedRouteId)) {
+      this.clearRouteSelection();
+      return;
+    }
+
+    this.syncRouteVisualState();
+
+    if (this.clusteringEnabled && !this.selectedRouteId) {
+      this.updateClustering();
+    }
+
+    if (!this.selectedRouteId && this.enabledRouteIds.size > 0) {
+      this.fitToVisibleRoutes(this.enabledRouteIds);
+    }
   }
 
   /**

@@ -17,13 +17,26 @@ export interface RouteCluster {
 export class RouteClusteringService {
 private clusters: { [clusterId: string]: RouteCluster } = {};
 private expandedClusters = new Map<string, any>();
-private clusterDistance = 50; // Distance in meters to group routes
+private clusterDistance = 60; // Distance in pixels to group routes
+private clusterRenderVersion = 0;
 private clusterPopup: maplibregl.Popup | null = null;
 private routeDataProvider?: (rId: string) => any;
 private currentHoverPopup: maplibregl.Popup | null = null;
 private routeEventHandlers = new Map<string, any>();
+private lastKnownPositions = new Map<string, [number, number]>();
 
 constructor(private mapIconService: MapIconService) {}
+
+  private calculateClusterCenter(positions: [number, number][]): [number, number] {
+    if (!positions || positions.length === 0) return [0, 0];
+    const sum = positions.reduce((acc, pos) => {
+      acc[0] += pos[0];
+      acc[1] += pos[1];
+      return acc;
+    }, [0, 0] as [number, number]);
+
+    return [sum[0] / positions.length, sum[1] / positions.length];
+  }
 
   /**
    * Group routes by proximity and create clusters
@@ -31,57 +44,83 @@ constructor(private mapIconService: MapIconService) {}
   clusterRoutes(map: maplibregl.Map, routes: { [rId: string]: RouteData }): RouteCluster[] {
     // Clear existing clusters
     this.clearClusters(map);
+    const renderVersion = ++this.clusterRenderVersion;
 
-    const routePositions: { rId: string; position: [number, number] }[] = [];
-    
+    const activeClusters: {
+      id: string;
+      routeIds: string[];
+      positions: [number, number][];
+      center: [number, number];
+    }[] = [];
+
     // Extract current positions for all routes
     Object.keys(routes).forEach(rId => {
       const route = routes[rId];
       const pos = route.currentVehiclePos || route.coords[route.coords.length - 1];
       if (pos) {
-        routePositions.push({ rId, position: [pos[0], pos[1]] });
+        const point: [number, number] = [pos[0], pos[1]];
+        this.lastKnownPositions.set(rId, point);
+        activeClusters.push({
+          id: `cluster-${Date.now()}-${Math.random()}`,
+          routeIds: [rId],
+          positions: [point],
+          center: point
+        });
       }
     });
 
-    const clusteredRoutes = new Set<string>();
+    // Agglomerative clustering: merge closest pairs of clusters until all distances > clusterDistance
+    let merged = true;
+    while (merged && activeClusters.length > 1) {
+      merged = false;
+      let minDistance = Infinity;
+      let mergeA = -1;
+      let mergeB = -1;
+
+      for (let i = 0; i < activeClusters.length; i++) {
+        for (let j = i + 1; j < activeClusters.length; j++) {
+          const dist = this.calculateDistance(map, activeClusters[i].center, activeClusters[j].center);
+          if (dist < minDistance) {
+            minDistance = dist;
+            mergeA = i;
+            mergeB = j;
+          }
+        }
+      }
+
+      if (minDistance <= this.clusterDistance) {
+        // Merge cluster B into cluster A
+        const cA = activeClusters[mergeA];
+        const cB = activeClusters[mergeB];
+
+        cA.routeIds.push(...cB.routeIds);
+        cA.positions.push(...cB.positions);
+        cA.center = this.calculateClusterCenter(cA.positions);
+
+        activeClusters.splice(mergeB, 1);
+        merged = true;
+      }
+    }
+
     const newClusters: RouteCluster[] = [];
 
-    // Group routes by proximity
-    routePositions.forEach(routeA => {
-      if (clusteredRoutes.has(routeA.rId)) return;
-
-      const routesInCluster: string[] = [routeA.rId];
-      clusteredRoutes.add(routeA.rId);
-
-      routePositions.forEach(routeB => {
-        if (clusteredRoutes.has(routeB.rId) || routeA.rId === routeB.rId) return;
-
-        const distance = this.calculateDistance(routeA.position, routeB.position);
-        if (distance <= this.clusterDistance) {
-          routesInCluster.push(routeB.rId);
-          clusteredRoutes.add(routeB.rId);
-        }
-      });
-
-      // Create cluster if more than one route
-      if (routesInCluster.length > 1) {
-        const clusterId = `cluster-${Date.now()}-${Math.random()}`;
+    activeClusters.forEach(c => {
+      if (c.routeIds.length > 1) {
         const cluster: RouteCluster = {
-          id: clusterId,
-          position: routeA.position,
-          routeIds: routesInCluster,
+          id: c.id,
+          position: c.center,
+          routeIds: c.routeIds,
           isVisible: true,
           expanded: false
         };
-        
         newClusters.push(cluster);
-        this.clusters[clusterId] = cluster;
+        this.clusters[cluster.id] = cluster;
       }
     });
 
     // Add cluster markers to map
     newClusters.forEach(cluster => {
-      this.addClusterMarker(map, cluster);
+      this.addClusterMarker(map, cluster, renderVersion);
     });
 
     return newClusters;
@@ -90,14 +129,89 @@ constructor(private mapIconService: MapIconService) {}
   /**
    * Add a cluster marker to the map
    */
-  private async addClusterMarker(map: maplibregl.Map, cluster: RouteCluster) {
+  private async addClusterMarker(map: maplibregl.Map, cluster: RouteCluster, renderVersion?: number) {
     const count = cluster.routeIds.length;
+    const sourceId = `cluster-source-${cluster.id}`;
+    const layerId = `cluster-layer-${cluster.id}`;
     
     // Create cluster icon
     await this.mapIconService.createClusterIcon(map, count);
 
-    // Immediately expand cluster on creation - show individual markers in circle
-    this.expandClusterImmediately(map, cluster);
+    // Ignore stale async renders that completed after clusters were cleared/rebuilt
+    if (renderVersion !== undefined && renderVersion !== this.clusterRenderVersion) return;
+    if (!this.clusters[cluster.id]) return;
+
+    if (!map.getSource(sourceId)) {
+      map.addSource(sourceId, {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: cluster.position
+          },
+          properties: {
+            clusterId: cluster.id,
+            count
+          }
+        }
+      });
+    }
+
+    (map.getSource(sourceId) as maplibregl.GeoJSONSource).setData({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: cluster.position
+      },
+      properties: {
+        clusterId: cluster.id,
+        count
+      }
+    });
+
+    if (!map.getLayer(layerId)) {
+      map.addLayer({
+        id: layerId,
+        type: 'symbol',
+        source: sourceId,
+        layout: {
+          'icon-image': `cluster-${count}`,
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true,
+          'icon-size': 1.2,
+          'icon-anchor': 'bottom'
+        }
+      });
+    }
+
+    const eventHandlers = {
+      mouseenter: () => {
+        map.getCanvas().style.cursor = 'pointer';
+      },
+      mouseleave: () => {
+        map.getCanvas().style.cursor = '';
+      },
+      click: (e: any) => {
+        this.handleClusterClick(map, cluster, e);
+      }
+    };
+
+    const existingHandlers = this.routeEventHandlers.get(layerId);
+    if (existingHandlers) {
+      map.off('mouseenter', layerId, existingHandlers.mouseenter);
+      if (existingHandlers.mousemove) {
+        map.off('mousemove', layerId, existingHandlers.mousemove);
+      }
+      map.off('mouseleave', layerId, existingHandlers.mouseleave);
+      map.off('click', layerId, existingHandlers.click);
+    }
+
+    map.on('mouseenter', layerId, eventHandlers.mouseenter);
+    map.on('mouseleave', layerId, eventHandlers.mouseleave);
+    map.on('click', layerId, eventHandlers.click);
+
+    this.routeEventHandlers.set(layerId, eventHandlers);
   }
 
   /**
@@ -211,6 +325,13 @@ constructor(private mapIconService: MapIconService) {}
     // Remove any cluster marker if it exists
     const sourceId = `cluster-source-${cluster.id}`;
     const layerId = `cluster-layer-${cluster.id}`;
+    const existingHandlers = this.routeEventHandlers.get(layerId);
+    if (existingHandlers) {
+      map.off('mouseenter', layerId, existingHandlers.mouseenter);
+      map.off('mouseleave', layerId, existingHandlers.mouseleave);
+      map.off('click', layerId, existingHandlers.click);
+      this.routeEventHandlers.delete(layerId);
+    }
     
     if (map.getLayer(layerId)) {
       map.removeLayer(layerId);
@@ -323,10 +444,24 @@ constructor(private mapIconService: MapIconService) {}
    */
   private showRouteMarker(map: maplibregl.Map, rId: string) {
     const layerId = `layer-vehicle-${rId}`;
-    
+    const sourceId = `vehicle-${rId}`;
+
+    // Restore original position if we have it
+    const pos = this.lastKnownPositions.get(rId);
+    if (pos && map.getSource(sourceId)) {
+      (map.getSource(sourceId) as maplibregl.GeoJSONSource).setData({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: pos
+        },
+        properties: { rId }
+      });
+    }
+
     if (map.getLayer(layerId)) {
       map.setLayoutProperty(layerId, 'visibility', 'visible');
-      
+
       // Add hover effects for route details
       this.addHoverTooltip(map, layerId, rId);
     }
@@ -364,7 +499,7 @@ constructor(private mapIconService: MapIconService) {}
             'icon-allow-overlap': true,
             'icon-ignore-placement': true,
             'icon-size': 1.2,
-            'icon-anchor': 'bottom'
+            'icon-anchor': 'center'
           }
         });
       }
@@ -393,45 +528,27 @@ constructor(private mapIconService: MapIconService) {}
    * Add hover tooltip to route marker
    */
   private addHoverTooltip(map: maplibregl.Map, layerId: string, rId: string) {
+    const showHoverCard = (e: any) => {
+      map.getCanvas().style.cursor = 'pointer';
+
+      if (this.onRouteHoverChanged) {
+        this.onRouteHoverChanged(true, rId);
+      }
+    };
+
     // Store event handlers to properly remove them later
     const eventHandlers = {
-      mouseenter: (e: any) => {
-        map.getCanvas().style.cursor = 'pointer';
-        
-        // if (this.currentHoverPopup) {
-        //   this.currentHoverPopup.remove();
-        // }
-        
-        const coordinates = (e.features![0].geometry as any).coordinates.slice();
-        
-        // Create tooltip content
-        const tooltipContent = this.createRouteTooltip(rId);
-        
-        // this.currentHoverPopup = new maplibregl.Popup({
-        //   closeButton: false,
-        //   closeOnClick: false,
-        //   className: 'route-hover-tooltip',
-        //   offset: {
-        //     'bottom': [0, -48],
-        //   } as any
-        // })
-        // .setLngLat(coordinates)
-        // .setHTML(tooltipContent)
-        // .addTo(map);
-      },
+      mouseenter: showHoverCard,
+      mousemove: showHoverCard,
 
       mouseleave: () => {
         map.getCanvas().style.cursor = '';
-        // if (this.currentHoverPopup) {
-        //   this.currentHoverPopup.remove();
-        //   this.currentHoverPopup = null;
-        // }
+        if (this.onRouteHoverChanged) {
+          this.onRouteHoverChanged(false, rId);
+        }
       },
 
       click: (e: any) => {
-        // if (this.currentHoverPopup) {
-        //   this.currentHoverPopup.remove();
-        // }
         this.selectRouteFromCluster(rId);
       }
     };
@@ -440,12 +557,16 @@ constructor(private mapIconService: MapIconService) {}
     const existingHandlers = this.routeEventHandlers.get(layerId);
     if (existingHandlers) {
       map.off('mouseenter', layerId, existingHandlers.mouseenter);
+      if (existingHandlers.mousemove) {
+        map.off('mousemove', layerId, existingHandlers.mousemove);
+      }
       map.off('mouseleave', layerId, existingHandlers.mouseleave);  
       map.off('click', layerId, existingHandlers.click);
     }
 
     // Add new listeners
     map.on('mouseenter', layerId, eventHandlers.mouseenter);
+    map.on('mousemove', layerId, eventHandlers.mousemove);
     map.on('mouseleave', layerId, eventHandlers.mouseleave);
     map.on('click', layerId, eventHandlers.click);
 
@@ -532,6 +653,16 @@ constructor(private mapIconService: MapIconService) {}
     // Remove center marker
     const centerSourceId = `cluster-center-${cluster.id}`;
     const centerLayerId = `cluster-center-layer-${cluster.id}`;
+    const centerHandlers = this.routeEventHandlers.get(centerLayerId);
+    if (centerHandlers) {
+      map.off('mouseenter', centerLayerId, centerHandlers.mouseenter);
+      if (centerHandlers.mousemove) {
+        map.off('mousemove', centerLayerId, centerHandlers.mousemove);
+      }
+      map.off('mouseleave', centerLayerId, centerHandlers.mouseleave);
+      map.off('click', centerLayerId, centerHandlers.click);
+      this.routeEventHandlers.delete(centerLayerId);
+    }
     if (map.getLayer(centerLayerId)) {
       map.removeLayer(centerLayerId);
     }
@@ -550,6 +681,9 @@ constructor(private mapIconService: MapIconService) {}
       const existingHandlers = this.routeEventHandlers.get(layerId);
       if (existingHandlers && map.getLayer(layerId)) {
         map.off('mouseenter', layerId, existingHandlers.mouseenter);
+        if (existingHandlers.mousemove) {
+          map.off('mousemove', layerId, existingHandlers.mousemove);
+        }
         map.off('mouseleave', layerId, existingHandlers.mouseleave);
         map.off('click', layerId, existingHandlers.click);
       }
@@ -590,7 +724,7 @@ constructor(private mapIconService: MapIconService) {}
     }
 
     // Ensure cluster center icon exists
-    if (!map.hasImage(`cluster-center-${count}`)) {
+    if (!map.hasImage(`cluster-${count}`)) {
       this.mapIconService.createClusterIcon(map, count);
     }
 
@@ -627,97 +761,27 @@ constructor(private mapIconService: MapIconService) {}
       map.on('mouseleave', centerLayerId, mouseLeaveHandler);
 
       // Store handlers for cleanup
-      this.routeEventHandlers.set(`${centerLayerId}-click`, { clickHandler, mouseEnterHandler, mouseLeaveHandler });
+      this.routeEventHandlers.set(centerLayerId, {
+        click: clickHandler,
+        mouseenter: mouseEnterHandler,
+        mouseleave: mouseLeaveHandler
+      });
     }
-  }
-
-  /**
-   * Create tooltip content for route
-   */
-  private createRouteTooltip(rId: string): string {
-    // Get route data if provider is available
-    let routeData: any = null;
-    if (this.routeDataProvider) {
-      routeData = this.routeDataProvider(rId);
-    }
-
-    const routeName = routeData?.name || `Ruta ${rId}`;
-    const status = routeData?.status || 'Activa';
-    const destination = routeData?.dest ? '📍 Con destino' : '';
-    
-    return `
-      <div class="route-tooltip">
-        <div class="route-tooltip-header">
-          <strong>${routeName}</strong>
-          <span class="status-badge status-${status.toLowerCase()}">${status}</span>
-        </div>
-        <div class="route-tooltip-body">
-          <div class="tooltip-info">
-            ${destination ? `<div>${destination}</div>` : ''}
-            <div>🚚 Vehículo activo</div>
-            <div class="action-hint">👆 Click para seleccionar</div>
-          </div>
-        </div>
-      </div>
-      <style>
-        .route-hover-tooltip .maplibregl-popup-content {
-          padding: 10px 14px;
-          border-radius: 8px;
-          box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-          font-size: 12px;
-          border: 1px solid #e5e7eb;
-          background: white;
-        }
-        .route-tooltip-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 6px;
-          color: #1f2937;
-        }
-        .status-badge {
-          font-size: 10px;
-          padding: 2px 6px;
-          border-radius: 12px;
-          font-weight: 500;
-        }
-        .status-active, .status-activa {
-          background: #dcfce7;
-          color: #16a34a;
-        }
-        .status-paused, .status-pausada {
-          background: #fed7aa;
-          color: #ea580c;
-        }
-        .route-tooltip-body {
-          color: #6b7280;
-          font-size: 11px;
-        }
-        .tooltip-info > div {
-          margin: 3px 0;
-          display: flex;
-          align-items: center;
-        }
-        .action-hint {
-          color: #3b82f6;
-          font-weight: 500;
-          margin-top: 6px;
-          padding-top: 4px;
-          border-top: 1px solid #f3f4f6;
-        }
-      </style>
-    `;
   }
 
   /**
    * Clear all clusters from map
    */
   clearClusters(map: maplibregl.Map) {
+    this.clusterRenderVersion++;
+
     Object.keys(this.clusters).forEach(clusterId => {
       const sourceId = `cluster-source-${clusterId}`;
       const layerId = `cluster-layer-${clusterId}`;
       const backgroundSourceId = `cluster-bg-${clusterId}`;
       const backgroundLayerId = `cluster-bg-layer-${clusterId}`;
+      const centerSourceId = `cluster-center-${clusterId}`;
+      const centerLayerId = `cluster-center-layer-${clusterId}`;
       const buttonSourceId = `cluster-btn-${clusterId}`;
       const buttonLayerId = `cluster-btn-layer-${clusterId}`;
       
@@ -737,6 +801,14 @@ constructor(private mapIconService: MapIconService) {}
         map.removeSource(backgroundSourceId);
       }
 
+      // Remove expanded cluster center marker
+      if (map.getLayer(centerLayerId)) {
+        map.removeLayer(centerLayerId);
+      }
+      if (map.getSource(centerSourceId)) {
+        map.removeSource(centerSourceId);
+      }
+
       // Remove collapse button
       if (map.getLayer(buttonLayerId)) {
         map.removeLayer(buttonLayerId);
@@ -752,6 +824,8 @@ constructor(private mapIconService: MapIconService) {}
       });
     });
 
+    this.removeAllClusterArtifacts(map);
+
     // Clear expanded clusters
     this.expandedClusters.clear();
     
@@ -759,6 +833,9 @@ constructor(private mapIconService: MapIconService) {}
     this.routeEventHandlers.forEach((handlers, layerId) => {
       if (map.getLayer(layerId)) {
         map.off('mouseenter', layerId, handlers.mouseenter);
+        if (handlers.mousemove) {
+          map.off('mousemove', layerId, handlers.mousemove);
+        }
         map.off('mouseleave', layerId, handlers.mouseleave);
         map.off('click', layerId, handlers.click);
       }
@@ -778,22 +855,50 @@ constructor(private mapIconService: MapIconService) {}
     // }
   }
 
+  private removeAllClusterArtifacts(map: maplibregl.Map) {
+    const style = map.getStyle();
+    if (!style) return;
+
+    const layerPrefixes = [
+      'cluster-layer-',
+      'cluster-bg-layer-',
+      'cluster-center-layer-',
+      'cluster-btn-layer-'
+    ];
+    const sourcePrefixes = [
+      'cluster-source-',
+      'cluster-bg-',
+      'cluster-center-',
+      'cluster-btn-'
+    ];
+
+    (style.layers || [])
+      .map(l => l.id)
+      .filter(id => layerPrefixes.some(prefix => id.startsWith(prefix)))
+      .forEach(id => {
+        if (map.getLayer(id)) {
+          map.removeLayer(id);
+        }
+      });
+
+    Object.keys((style as any).sources || {})
+      .filter(id => sourcePrefixes.some(prefix => id.startsWith(prefix)))
+      .forEach(id => {
+        if (map.getSource(id)) {
+          map.removeSource(id);
+        }
+      });
+  }
+
   /**
-   * Calculate distance between two coordinates in meters
+   * Calculate distance between two coordinates in pixels
    */
-  private calculateDistance(pos1: [number, number], pos2: [number, number]): number {
-    const R = 6371e3; // Earth's radius in meters
-    const phi1 = pos1[1] * Math.PI / 180;
-    const phi2 = pos2[1] * Math.PI / 180;
-    const deltaPhi = (pos2[1] - pos1[1]) * Math.PI / 180;
-    const deltaLambda = (pos2[0] - pos1[0]) * Math.PI / 180;
-
-    const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
-              Math.cos(phi1) * Math.cos(phi2) *
-              Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    return R * c;
+  private calculateDistance(map: maplibregl.Map, pos1: [number, number], pos2: [number, number]): number {
+    const p1 = map.project(pos1);
+    const p2 = map.project(pos2);
+    const dx = p1.x - p2.x;
+    const dy = p1.y - p2.y;
+    return Math.sqrt(dx * dx + dy * dy);
   }
 
   /**
@@ -810,6 +915,8 @@ constructor(private mapIconService: MapIconService) {}
    * Callback function for route selection
    */
   public onRouteSelected?: (routeId: string) => void;
+
+  public onRouteHoverChanged?: (isHovering: boolean, routeId: string) => void;
 
   /**
    * Set route data provider for enhanced tooltips
@@ -863,11 +970,21 @@ constructor(private mapIconService: MapIconService) {}
     return null;
   }
 
+  getClusterPositionByRouteId(rId: string): [number, number] | null {
+    const cluster = this.findClusterByRouteId(rId);
+    return cluster?.position || null;
+  }
+
   /**
    * Check if a route is currently in a cluster
    */
   isRouteInCluster(rId: string): boolean {
     return this.findClusterByRouteId(rId) !== null;
+  }
+
+  isRouteInExpandedCluster(rId: string): boolean {
+    const cluster = this.findClusterByRouteId(rId);
+    return !!cluster?.expanded;
   }
 
   /**

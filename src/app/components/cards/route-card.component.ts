@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { FruitIconService } from '../../services/fruit-icon.service';
 
 export interface RouteLoad {
   load: string;
@@ -75,7 +76,10 @@ export class RouteCardComponent implements OnInit {
   @Input() selected: boolean = false;
   @Output() cardClick = new EventEmitter<RouteCardData>();
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private fruitIconService: FruitIconService
+  ) {}
 
   onViewRoute(event: Event) {
     event.stopPropagation();
@@ -100,8 +104,7 @@ export class RouteCardComponent implements OnInit {
   }
 
   get fruitIconPath(): string {
-    const fruit = (this.route?.load?.load || 'default').toLowerCase().trim();
-    return `assets/icons/fruits/cards/${fruit}.svg`;
+    return this.fruitIconService.getCardIconPath(this.route?.load?.load || null);
   }
 
   formatEstimatedDuration(seconds?: number): string {
