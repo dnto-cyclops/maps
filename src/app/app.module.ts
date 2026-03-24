@@ -12,9 +12,11 @@ import { RoutePanelComponent } from './components/panel/route-panel.component';
 import { RouteCardComponent } from './components/cards/route-card.component';
 import { RouteDetailsPanelComponent } from './components/details/route-details.component';
 import { RouteSummaryOverlayComponent } from './components/summary/route-summary-overlay.component';
+import { RoutesViewComponent } from './views/routes-view/routes-view.component';
 
 const routes = [
   { path: 'map', component: RouteMapComponent },
+  { path: 'routes', component: RoutesViewComponent },
   { path: '', redirectTo: '/map', pathMatch: 'full' } // Esto redirige al inicio a /map
 ];
 
@@ -26,7 +28,8 @@ const routes = [
     RoutePanelComponent,
     RouteCardComponent,
     RouteDetailsPanelComponent,
-    RouteSummaryOverlayComponent
+    RouteSummaryOverlayComponent,
+    RoutesViewComponent
   ],
   imports: [
     BrowserModule,

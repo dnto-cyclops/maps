@@ -190,10 +190,28 @@
 }
 
 
+.progress-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .progress-label {
-  text-align: right;
   font-size: 0.8rem;
   color: #64748b;
+}
+
+.eta-duration {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #64748b;
+
+  .hourglass-icon {
+    font-size: 11px;
+    line-height: 1;
+  }
 }
 
 .see-routes{

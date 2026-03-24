@@ -109,7 +109,7 @@ export class RouteCardComponent implements OnInit {
 
   formatEstimatedDuration(seconds?: number): string {
     if (!seconds) return 'Calculando..';
-    
+
     const totalMinutes = Math.round(seconds / 60);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
@@ -118,6 +118,17 @@ export class RouteCardComponent implements OnInit {
       return minutes > 0 ? `${hours}H ${minutes}m` : `${hours}H`;
     }
     return `${minutes}m`;
+  }
+
+  formatArrivalTime(startTs?: number, estimatedDurationS?: number): string {
+    if (!startTs || !estimatedDurationS) return '';
+    const startMs = startTs > 1e12 ? startTs : startTs * 1000;
+    const arrivalMs = startMs + estimatedDurationS * 1000;
+    const start = new Date(startMs);
+    const arrival = new Date(arrivalMs);
+    const nextDay = arrival.getDate() !== start.getDate() || arrival.getMonth() !== start.getMonth();
+    const timeStr = arrival.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return nextDay ? `${timeStr} +1` : timeStr;
   }
 
   get statusLabel(): string {

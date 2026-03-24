@@ -38,7 +38,7 @@
         <span class="icon-clock">
           <img src="assets/icons/clock.svg" alt="Tiempo" class="clock-icon" />
         </span>
-        <span>{{ formatEstimatedDuration(route.dest?.estimated_durationS) }}</span>
+        <span>{{ formatArrivalTime(route.startTs, route.dest?.estimated_durationS) || formatEstimatedDuration(route.dest?.estimated_durationS) }}</span>
       </div>
     </div>
 
@@ -74,8 +74,12 @@
       [class.stopped]="isStatus('stopped')"
       ></div>
     </div>
-    <div class="progress-label">
-      {{ route.progress || 0 }}% completado
+    <div class="progress-footer">
+      <span class="progress-label">{{ route.progress || 0 }}% completado</span>
+      <div class="eta-duration" *ngIf="route.dest?.estimated_durationS">
+        <span class="hourglass-icon">⏳</span>
+        <span>{{ formatEstimatedDuration(route.dest?.estimated_durationS) }}</span>
+      </div>
     </div>
   </div>
 

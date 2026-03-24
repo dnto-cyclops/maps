@@ -110,11 +110,15 @@ constructor(
           });
           console.log('RouteList after processing:', this.routeList);
           this.loadingInitialSnapshot = false;
-          this.fitToVisibleRoutes();
 
           const rId = this.activatedRoute.snapshot.queryParamMap.get('rId');
           if (rId) {
-            setTimeout(() => this.selectRoute(rId), 300);
+            // Mismo flujo que seleccionar desde el panel: centrar en la ruta específica
+            // sin pasar primero por fitToVisibleRoutes (evita animaciones en conflicto).
+            // animateCamera:false → jumpTo instantáneo, sin vuelo desde Colombia.
+            this.selectRoute(rId, false);
+          } else {
+            this.fitToVisibleRoutes();
           }
         });
       });
@@ -228,11 +232,23 @@ constructor(
       origin: metaData.origin || metaData.supplier || 'N/D',
       destination: metaData.dest?.name || metaData.route || 'N/D',
       etaS: metaData.dest?.estimated_durationS || metaData.etaS,
+      startTs: metaData.startTs || null,
       driver: metaData.driver || 'N/D',
       plate: metaData.plate || 'N/D',
       progress: typeof metaData.progress === 'number' ? metaData.progress : null,
       lastReportTs: this.routeLastReportTs[rId] || null
     };
+  }
+
+  formatArrivalTime(startTs?: number, estimatedDurationS?: number): string {
+    if (!startTs || !estimatedDurationS) return '';
+    const startMs = startTs > 1e12 ? startTs : startTs * 1000;
+    const arrivalMs = startMs + estimatedDurationS * 1000;
+    const start = new Date(startMs);
+    const arrival = new Date(arrivalMs);
+    const nextDay = arrival.getDate() !== start.getDate() || arrival.getMonth() !== start.getMonth();
+    const timeStr = arrival.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return nextDay ? `${timeStr} +1` : timeStr;
   }
 
   private handleRouteHover(isHovering: boolean, rId: string) {
@@ -758,8 +774,9 @@ constructor(
 
   /**
    * Select a route (from cluster, panel or vehicle click)
+   * @param animateCamera false = jumpTo instantáneo (usado al llegar por querystring)
    */
-  private selectRoute(routeId: string) {
+  private selectRoute(routeId: string, animateCamera: boolean = true) {
     console.log(`🎯 Selecting route: ${routeId}`);
 
     let clusterCenter: [number, number] | null = null;
@@ -774,7 +791,7 @@ constructor(
       this.routeClusteringService.clearClusters(this.map);
     }
 
-    this.finalizeRouteSelection(routeId, clusterCenter);
+    this.finalizeRouteSelection(routeId, clusterCenter, animateCamera);
   }
 
   private clearRouteSelection(recluster: boolean = true) {
@@ -805,47 +822,55 @@ constructor(
 
   /**
    * Finalize route selection after cluster expansion (if needed)
+   * @param animateCamera false = jumpTo instantáneo, true = flyTo animado (default)
    */
-  private finalizeRouteSelection(routeId: string, clusterCenter: [number, number] | null = null) {
+  private finalizeRouteSelection(routeId: string, clusterCenter: [number, number] | null = null, animateCamera: boolean = true) {
     this.selectedRouteId = routeId;
     this.rs.selectRoute(routeId);
     this.clearSelectedRouteDetailLayers();
     this.selectedRouteDetails = null;
     const entry = this.routes[routeId];
     const currentPos = entry?.currentVehiclePos || entry?.coords?.[entry.coords.length - 1] || null;
-    const displayPos = clusterCenter || currentPos;
+    // cameraPos uses the cluster centroid so the camera moves to where the user clicked,
+    // but the vehicle marker must always use the actual vehicle position (currentPos).
+    // When animateCamera=false (URL nav), always center on the actual vehicle position.
+    const cameraPos = animateCamera ? (clusterCenter || currentPos) : currentPos;
 
     if (entry?.coords?.length > 1) {
       const coordsToRender = [...entry.coords];
       const lastCoord = coordsToRender[coordsToRender.length - 1];
       if (
-        displayPos &&
-        (!lastCoord || lastCoord[0] !== displayPos[0] || lastCoord[1] !== displayPos[1])
+        currentPos &&
+        (!lastCoord || lastCoord[0] !== currentPos[0] || lastCoord[1] !== currentPos[1])
       ) {
-        coordsToRender.push([displayPos[0], displayPos[1]]);
+        coordsToRender.push([currentPos[0], currentPos[1]]);
       }
 
       this.routeDrawingService.drawRouteLine(this.map, routeId, coordsToRender);
     }
 
-    if (displayPos) {
-      this.placeOrMoveVehicle(routeId, displayPos);
+    if (currentPos) {
+      this.placeOrMoveVehicle(routeId, currentPos);
     }
 
     // Update vehicle selection in drawing service
     this.routeDrawingService.setSelectedRoute(routeId);
     this.syncRouteVisualState();
 
-    const pos = displayPos;
+    const pos = cameraPos;
     if (pos) {
-      this.map.flyTo({
-        center: pos as [number, number],
-        zoom: 14,
-        speed: 0.1,
-        curve: 1.2,
-        duration: 900,
-        essential: true
-      });
+      if (animateCamera) {
+        this.map.flyTo({
+          center: pos as [number, number],
+          zoom: 14,
+          speed: 0.1,
+          curve: 1.2,
+          duration: 900,
+          essential: true
+        });
+      } else {
+        this.map.jumpTo({ center: pos as [number, number], zoom: 14 });
+      }
     }
 
     // Get route details
