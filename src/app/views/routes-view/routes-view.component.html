@@ -1,63 +1,63 @@
   <div class="routes-view">
     <div class="routes-header">
-      <h1 class="page-title">Rutas Activas</h1>
+      <h1 class="page-title">{{ 'routes.title' | translate }}</h1>
 
       <div class="filters-container">
         <div class="filters-header" (click)="toggleFilters()">
-          <img src="assets/icons/filter.svg" alt="filtrar" class="filter-icon" />
-          <span class="filter-label">Filtrar</span>
+          <img src="assets/icons/filter.svg" alt="'routes.filter' | translate" class="filter-icon" />
+          <span class="filter-label">{{ 'routes.filter' | translate }}</span>
           <img 
             [src]="filtersOpen ? 'assets/icons/chevron-up.svg' : 'assets/icons/chevron-down.svg'" 
             class="chevron-icon" 
-            alt="toggle" 
+            alt="'routes.filter' | translate" 
           />
         </div>
 
         <div class="filters" *ngIf="filtersOpen">
           <div class="filter-group">
-            <label>Estado</label>
+            <label>{{ 'routes.status' | translate }}</label>
             <select [ngModel]="statusFilter" (ngModelChange)="setStatus($event)">
-              <option value="Todos">Todos</option>
-              <option value="active">Activa</option>
-              <option value="stopped">Detenida</option>
-              <option value="planned">Programada</option>
-              <option value="finished">Finalizado</option>
+              <option value="Todos">{{ 'routes.all' | translate }}</option>
+              <option value="active">{{ 'routes.active' | translate }}</option>
+              <option value="stopped">{{ 'routes.stopped' | translate }}</option>
+              <option value="planned">{{ 'routes.planned' | translate }}</option>
+              <option value="finished">{{ 'routes.finished' | translate }}</option>
             </select>
           </div>
 
           <div class="filter-group">
-            <label>Placa</label>
+            <label>{{ 'routes.plate' | translate }}</label>
             <input 
               type="text" 
               class="search-input" 
-              placeholder="Buscar placa..." 
+              placeholder="{{ 'routes.search_plate_placeholder' | translate }}" 
               [ngModel]="searchPlate" 
               (ngModelChange)="setSearchPlate($event)" />
           </div>
 
           <div class="filter-group">
-            <label>Producto</label>
+            <label>{{ 'routes.product' | translate }}</label>
             <select [ngModel]="selectedFruit" (ngModelChange)="setFruit($event)">
               <option *ngFor="let fruit of uniqueFruits" [value]="fruit">{{ fruit }}</option>
             </select>
           </div>
 
           <div class="filter-group">
-            <label>Proveedor</label>
+            <label>{{ 'routes.provider' | translate }}</label>
             <select [ngModel]="selectedProvider" (ngModelChange)="setProvider($event)">
               <option *ngFor="let provider of uniqueProviders" [value]="provider">{{ provider }}</option>
             </select>
           </div>
 
           <div class="filter-group">
-            <label>Destino</label>
+            <label>{{ 'routes.destination' | translate }}</label>
             <select [ngModel]="selectedDestination" (ngModelChange)="setDestination($event)">
               <option *ngFor="let destination of uniqueDestinations" [value]="destination">{{ destination }}</option>
             </select>
           </div>
 
           <div class="filter-group">
-            <label>Desde</label>
+            <label>{{ 'routes.from' | translate }}</label>
             <input 
               type="date" 
               class="date-input" 
@@ -66,7 +66,7 @@
           </div>
 
           <div class="filter-group">
-            <label>Hasta</label>
+            <label>{{ 'routes.to' | translate }}</label>
             <input 
               type="date" 
               class="date-input" 
@@ -79,11 +79,11 @@
 
     <div class="state-msg" *ngIf="loading">
       <div class="spinner"></div>
-      <span>Cargando rutas...</span>
+      <span>{{ 'routes.loading' | translate }}</span>
     </div>
 
     <div class="state-msg error" *ngIf="error">
-      <span>No se pudieron cargar las rutas.</span>
+      <span>{{ 'routes.error' | translate }}</span>
     </div>
 
     <div class="routes-grid" *ngIf="!loading && !error">
@@ -94,7 +94,7 @@
       ></app-route-card>
 
       <div class="empty" *ngIf="filteredRoutes.length === 0">
-        Sin rutas para el filtro seleccionado.
+        {{ 'routes.empty' | translate }}
       </div>
     </div>
   </div>

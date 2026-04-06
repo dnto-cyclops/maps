@@ -70,7 +70,7 @@ export function mapApiToRouteCardData(api: RouteApiResponse): RouteCardData {
   templateUrl: './route-card.component.html',
   styleUrls: ['./route-card.component.scss']
 })
-export class RouteCardComponent implements OnInit {
+export class RouteCardComponent {
   @Input() route!: RouteCardData;
   @Input() details: boolean = false;
   @Input() selected: boolean = false;
@@ -86,9 +86,6 @@ export class RouteCardComponent implements OnInit {
     this.router.navigate(['/map'], { queryParams: { rId: this.route.rId } });
   }
 
-  ngOnInit() {
-    console.log('[LIST-ROUTES] initialized with route:', this.route);
-  }
 
   onCardClick() {
     this.cardClick.emit(this.route);

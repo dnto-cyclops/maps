@@ -1,4 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
+:root {
+  --primary_color: #306c2d;
+}
 
 * {
     font-family: Montserrat;
@@ -11,13 +16,17 @@
     padding: 0;
 }
 
+inova-nav {
+  background-color: #2d5a27;
+  display: block;
+}
+
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;
 }
-
 
 @media (max-width: 1440px) {
   html {

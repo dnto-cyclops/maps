@@ -9,7 +9,7 @@
     <div class="route-details__main-section">
       <div class="route-details__header">
         <div class="route-details__title">
-          <span class="route-details__label">Producto - </span>
+          <span class="route-details__label">{{ 'routes.product' | translate}} - </span>
           <img 
             [src]="'assets/icons/fruits/cards/' + (route.productName | lowercase) + '.svg'" 
             [alt]="route.productName"
@@ -25,14 +25,14 @@
           [class.route-details__badge--finished]="route.status === 'finished'"
           [class.route-details__badge--stopped]="route.status === 'stopped'"
         >
-          {{ statusLabel || (route.status | titlecase) }}
+          {{ statusLabel || ('routes.' + route.status | translate) }}
         </span>
       </div>
 
       <div class="route-details__meta">
-        <p class="route-details__meta-label">Origen:</p>
+        <p class="route-details__meta-label">{{ 'map.origin' | translate }}:</p>
         <p class="route-details__meta-text">{{ route.supplier }}</p>
-        <p class="route-details__meta-label">Destino:</p>
+        <p class="route-details__meta-label">{{ 'map.destination' | translate }}:</p>
         <p class="route-details__meta-text">{{ route.destination }}</p>
       </div>
 
@@ -40,7 +40,7 @@
         <div class="route-details__item">
           <img src="assets/icons/garage.svg" class="route-details__item-icon" />
           <div class="route-details__item-content">
-            <span class="route-details__item-label">Origen</span>
+            <span class="route-details__item-label">{{ 'map.origin' | translate }}</span>
             <span class="route-details__item-field">{{ route.supplier }}</span>
           </div>
         </div>
@@ -48,7 +48,7 @@
         <div class="route-details__item">
           <img src="assets/icons/calendar.svg" class="route-details__item-icon" />
           <div class="route-details__item-content">
-            <span class="route-details__item-label">Fecha</span>
+            <span class="route-details__item-label">{{ 'details.date' | translate}}</span>
             <span class="route-details__item-field">{{ route.date }}</span>
           </div>
         </div>
@@ -56,15 +56,15 @@
         <div class="route-details__item">
           <img src="assets/icons/package.svg" class="route-details__item-icon" />
           <div class="route-details__item-content">
-            <span class="route-details__item-label">Detalle</span>
+            <span class="route-details__item-label">{{ 'details.detail' | translate }}</span>
             
             <div class="route-details__item-row">
-              <span class="route-details__item-field">Proveedor:</span>
+              <span class="route-details__item-field">{{ 'routes.provider' | translate }}:</span>
               <span class="route-details__item-value">{{ route.supplier }}</span>
             </div>
             
             <div class="route-details__item-row">
-              <span class="route-details__item-field">Peso:</span>
+              <span class="route-details__item-field">{{ 'details.weight' | translate }}:</span>
               <span class="route-details__item-value">{{ route.weight }}</span>
             </div>
           </div>
@@ -74,15 +74,15 @@
   
   <div class="route-details__right">
     <div class="route-details__driver-section">
-      <p class="route-details__driver-title">Información Conductor</p>
+      <p class="route-details__driver-title">{{ 'details.driver_info' | translate }}</p>
       
       <div class="route-details__driver-info">
-        <span class="route-details__driver-label">Conductor:</span>
+        <span class="route-details__driver-label">{{ 'map.driver' | translate }}:</span>
         <span class="route-details__driver-value">{{ route.driverName }}</span>
       </div>
   
       <div class="route-details__driver-info">
-        <span class="route-details__driver-label">Celular:</span>
+        <span class="route-details__driver-label">{{ 'details.phone' | translate }}:</span>
         <a class="route-details__driver-phone" [href]="'tel:' + route.driverPhone">
           {{ route.driverPhone || 'N/D' }}
         </a>
@@ -93,13 +93,13 @@
       *ngIf="route.status === 'stopped' && route.stoppedSince"
     >
       <div class="route-details__alert-title">
-         Alerta de inactividad
+         {{ 'details.inactivity_alert' | translate }}
       </div>
       <div class="route-details__alert-text" *ngIf="isInactiveAlert">
-        El conductor lleva más de 30 minutos detenido.
+        {{ 'details.inactivity_msg' | translate }}
       </div>
       <div class="route-details__alert-text">
-        Tiempo detenido: <strong>{{ stoppedDuration }}</strong>
+        {{ 'details.stopped_time' | translate }}: <strong>{{ stoppedDuration }}</strong>
       </div>
     </div>
   </div>

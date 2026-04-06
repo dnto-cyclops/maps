@@ -110,7 +110,6 @@ export class RouteDetailsPanelComponent implements OnInit, OnDestroy, OnChanges 
       ? lastStoppedSegment.tsStart 
       : null;
 
-    console.log(data.driver)
     return {
       rId: data?.rId || data?.routeId || data?.id || fallbackId,
       productName,

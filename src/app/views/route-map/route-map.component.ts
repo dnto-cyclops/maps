@@ -108,7 +108,6 @@ constructor(
             this.upsertRouteMeta(r);
             this.drawRoute(r);
           });
-          console.log('RouteList after processing:', this.routeList);
           this.loadingInitialSnapshot = false;
 
           const rId = this.activatedRoute.snapshot.queryParamMap.get('rId');
@@ -212,8 +211,6 @@ constructor(
     
     if (existingIdx >= 0) this.routeList[existingIdx] = { ...this.routeList[existingIdx], ...meta };
     else this.routeList.unshift(meta);
-    
-    console.log(`RouteList now has ${this.routeList.length} routes:`, this.routeList);
     
     this.updateCounters();
     
@@ -777,7 +774,6 @@ constructor(
    * @param animateCamera false = jumpTo instantáneo (usado al llegar por querystring)
    */
   private selectRoute(routeId: string, animateCamera: boolean = true) {
-    console.log(`🎯 Selecting route: ${routeId}`);
 
     let clusterCenter: [number, number] | null = null;
     if (this.clusteringEnabled) {
@@ -938,7 +934,6 @@ constructor(
       return;
     }
 
-    console.log(`📋 Route selected from panel: ${route.rId}`);
     this.selectRoute(route.rId);
   }
 

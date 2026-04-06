@@ -4,8 +4,8 @@
       <div class="texts">
         <img src="assets/icons/routes.svg" class="router-icon" />
         <div class="info">
-          <div class="title">Rutas</div>
-          <div class="subtitle">Monitoreo en tiempo real</div>
+          <div class="title">{{ 'general.routes' | translate}}</div>
+          <div class="subtitle">{{ 'general.real_time_monitoring' | translate}}</div>
         </div>
       </div>
       <button class="collapse-btn" (click)="onTogglePanel()">
@@ -15,10 +15,10 @@
 
     <div class="panel-summary">
       <div class="summary-item">
-        <span class="dot active"></span> {{ activeCount }} <span class="label">Rutas activas</span>
+        <span class="dot active"></span> {{ activeCount }} <span class="label">{{ 'general.active_routes_count' | translate}}</span>
       </div>
       <div class="summary-item">
-        <span class="dot paused"></span> {{ pausedCount }} <span class="label">En pausa</span>
+        <span class="dot paused"></span> {{ pausedCount }} <span class="label">{{ 'general.on_pause' | translate}}</span>
       </div>
     </div>
   </div>
@@ -26,7 +26,7 @@
   <div class="filters" *ngIf="!collapsed">
     <div class="filter-header" (click)="toggleFiltersVisibility()" role="button" tabindex="0" (keydown.enter)="toggleFiltersVisibility()" (keydown.space)="toggleFiltersVisibility()">
       <img src="assets/icons/filter.svg" class="filter-icon" /> 
-      <span>Filtros</span>
+      <span>{{ 'general.filters' | translate}}</span>
       <button class="toggle-filters-btn" [attr.aria-expanded]="showFilters" type="button">
         <img [src]="showFilters ? 'assets/icons/chevron-up.svg' : 'assets/icons/chevron-down.svg'" class="chevron-icon" />
       </button>
@@ -34,7 +34,7 @@
 
     <div class="filter-controls" *ngIf="showFilters">
       <div class="control-group">
-        <label>Estado</label>
+        <label>{{ 'routes.status' | translate}}</label>
         <div class="select-wrapper">
           <select [ngModel]="selectedStatus" (ngModelChange)="onStatusChange($event)">
             <option *ngFor="let status of uniqueStatusOptions" [value]="status">{{ status }}</option>
@@ -42,7 +42,7 @@
         </div>
       </div>
       <div class="control-group">
-        <label>Producto</label>
+        <label>{{ 'routes.product' | translate}}</label>
         <div class="select-wrapper">
           <select [ngModel]="selectedFruit" (ngModelChange)="onFruitChange($event)">
             <option *ngFor="let fruit of uniqueFruits" [value]="fruit">{{ fruit }}</option>
@@ -50,12 +50,12 @@
         </div>
       </div>
       <div class="control-group">
-        <label>Desde</label>
+        <label>{{ 'routes.from' | translate}}</label>
         <input type="date" class="date-input" [ngModel]="dateFromFilter" 
               (ngModelChange)="setDateFrom($event)" />
       </div>
       <div class="control-group">
-        <label>Hasta</label>
+        <label>{{ 'routes.to' | translate}}</label>
         <input type="date" class="date-input" [ngModel]="dateToFilter" 
               (ngModelChange)="setDateTo($event)" />
       </div>
@@ -71,7 +71,7 @@
           (cardClick)="onRouteSelected($event)">
         </app-route-card>
       </div>
-      <div class="empty" *ngIf="filteredRoutes.length === 0">Sin rutas activas</div>
+      <div class="empty" *ngIf="filteredRoutes.length === 0">{{ 'general.empty_active' | translate}}</div>
     </div>
 
     <div class="scroll-controls">

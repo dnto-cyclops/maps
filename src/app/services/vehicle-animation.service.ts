@@ -28,14 +28,12 @@ export class VehicleAnimationService {
 
     // Basic validation: reject coordinates outside valid range
     if (Math.abs(lng) > 180 || Math.abs(lat) > 90) {
-      console.warn(`[VehicleAnimation] Invalid coordinate range for route ${rId}:`, { lng, lat });
       return;
     }
 
     // Diagnostic: warn if coordinates are near Null Island (0,0) within 1° radius
     // This uses the correct [lng, lat] format
     if (Math.abs(lng) < 1.0 && Math.abs(lat) < 1.0) {
-      console.warn(`[VehicleAnimation] Suspicious Null Island coordinate for route ${rId}:`, targetPos);
       return; // Reject Null Island coordinates
     }
 
@@ -54,12 +52,6 @@ export class VehicleAnimationService {
       const dx = Math.abs(targetPos[0] - lastPos[0]);
       const dy = Math.abs(targetPos[1] - lastPos[1]);
       if (dx > 10.0 || dy > 10.0) {
-        console.warn(`[VehicleAnimation] Skipping suspicious position jump for route ${rId}:`, { 
-          from: lastPos, 
-          to: targetPos, 
-          delta: { dx: dx.toFixed(6), dy: dy.toFixed(6) },
-          distanceKm: ((dx + dy) * 111).toFixed(2)
-        });
         return;
       }
     }

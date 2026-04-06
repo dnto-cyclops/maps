@@ -993,7 +993,6 @@ constructor(private mapIconService: MapIconService) {}
   expandClusterContainingRoute(map: maplibregl.Map, rId: string): boolean {
     const cluster = this.findClusterByRouteId(rId);
     if (cluster && !cluster.expanded) {
-      console.log(`🎯 Auto-expanding cluster for route ${rId}:`, cluster);
       this.expandClusterWithZoom(map, cluster);
       return true;
     }

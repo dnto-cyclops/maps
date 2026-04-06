@@ -1,44 +1,61 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common'; // Para *ngIf, *ngFor
-import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
-import { RouterModule } from '@angular/router'; // Para RouterLink y RouterLinkActive
-
+import { RouterModule, Routes } from '@angular/router';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { App } from './app';
-import { SidebarComponent } from './layout/sidebar.component';
-import { RouteMapComponent } from './views/route-map/route-map.component';
-import { RoutePanelComponent } from './components/panel/route-panel.component';
-import { RouteCardComponent } from './components/cards/route-card.component';
-import { RouteDetailsPanelComponent } from './components/details/route-details.component';
-import { RouteSummaryOverlayComponent } from './components/summary/route-summary-overlay.component';
-import { RoutesViewComponent } from './views/routes-view/routes-view.component';
+import { SessionListenerComponent } from 'inova-front-core/session';
+import { environment } from '../environments/environment';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { AuthInterceptor } from './services/auth-interceptor.service';
+import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
+import { TranslationHttpLoader } from 'inova-front-core/i18n';
+import { HttpClient } from '@angular/common/http';
 
-const routes = [
-  { path: 'map', component: RouteMapComponent },
-  { path: 'routes', component: RoutesViewComponent },
-  { path: '', redirectTo: '/map', pathMatch: 'full' } // Esto redirige al inicio a /map
+export function httpLoaderFactory(http: HttpClient): TranslationHttpLoader {
+  return new TranslationHttpLoader(http, environment.i18nBaseUrl);
+}
+
+const routes: Routes = [
+  {
+    path: 'session-listener',
+    component: SessionListenerComponent,
+    data: {
+      allowedOrigins: [
+        environment.colUrl,
+        environment.repUrl,
+        environment.biUrl,
+        environment.colWebUrl,
+        environment.domine,
+      ],
+    },
+  },
+  {
+    path: '',
+    loadChildren: () => import('./layout/main-layout.module').then((m) => m.MainLayoutModule),
+  },
 ];
 
 @NgModule({
-  declarations: [
-    App,
-    SidebarComponent,
-    RouteMapComponent,
-    RoutePanelComponent,
-    RouteCardComponent,
-    RouteDetailsPanelComponent,
-    RouteSummaryOverlayComponent,
-    RoutesViewComponent
-  ],
+  declarations: [App],
   imports: [
     BrowserModule,
-    CommonModule,
-    FormsModule,
+    BrowserAnimationsModule,
     HttpClientModule,
-    RouterModule.forRoot(routes) 
+    RouterModule.forRoot(routes),
+    MatSnackBarModule,
+    TranslateModule.forRoot({
+      loader: {
+        provide: TranslateLoader,
+        useFactory: httpLoaderFactory,
+        deps: [HttpClient]
+      }
+    })
   ],
-  providers: [],
-  bootstrap: [App]
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
+  ],
+  bootstrap: [App],
 })
-export class AppModule { }
+export class AppModule {}

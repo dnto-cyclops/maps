@@ -1,21 +1,21 @@
 
 <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
   <div class="sidebar-item active" routerLink="/map" routerLinkActive="active">
-    <img src="assets/icons/map.svg" class="sidebar-icon" />
-    <span class="sidebar-label" *ngIf="!sidebarCollapsed">Mapa</span>
+    <img src="assets/icons/map.svg" class="sidebar-icon" [alt]="'sidebar.map' | translate"/>
+    <span class="sidebar-label" *ngIf="!sidebarCollapsed">{{ 'general.map' | translate }}</span>
   </div>
 
   <div class="sidebar-item" routerLink="/routes" routerLinkActive="active">
-    <img src="assets/icons/point.svg" class="sidebar-icon" />
-    <span class="sidebar-label" *ngIf="!sidebarCollapsed">Rutas</span>
+    <img src="assets/icons/point.svg" class="sidebar-icon" [alt]="'sidebar.routes' | translate"/>
+    <span class="sidebar-label" *ngIf="!sidebarCollapsed">{{ 'general.routes' | translate }}</span>
   </div>
   
   <div class="sidebar-footer">
     <button class="toggle-sidebar-btn" (click)="toggleSidebar()">
       <span class="arrow-icon" [class.rotated]="sidebarCollapsed">
-          <img src="assets/icons/close.svg" class="close" />
+          <img src="assets/icons/close.svg" class="close" [alt]="'sidebar.hide_menu' | translate"/>
       </span>
-      <span class="sidebar-label" *ngIf="!sidebarCollapsed">Ocultar menú</span>
+      <span class="sidebar-label" *ngIf="!sidebarCollapsed">{{ 'general.hide_menu' | translate }}</span>
     </button>
   </div>
 </aside>

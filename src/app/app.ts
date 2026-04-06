@@ -1,11 +1,14 @@
 import { Component } from '@angular/core';
-//import { RouterOutlet } from '@angular/router';
-//import { SidebarComponent } from './layout/sidebar.component';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-root',
-  //imports: [RouterOutlet, SidebarComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
-export class App {}
+export class App {
+  constructor(private translateService: TranslateService) {
+    translateService.addLangs(['en', 'es', 'pt']);
+    translateService.setDefaultLang('es');
+  }
+}

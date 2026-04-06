@@ -79,7 +79,6 @@ export class RoutePanelComponent implements OnChanges, AfterViewInit, DoCheck {
     }
     
     if (this.dateFromFilter || this.dateToFilter) {
-      console.log(route)
       const routeTimestamp = route.startTs || 0;
 
       if (this.dateFromFilter) {

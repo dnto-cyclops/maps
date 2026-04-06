@@ -83,7 +83,6 @@ constructor(
         const val = this.coordinateService.validatePolylinePoint(lat, lng);
         if (!val) {
           if (Math.abs(lat) > 0.0001 || Math.abs(lng) > 0.0001) {
-            console.warn('[parsePolyline] Filtered suspicious decoded point:', { lat, lng });
           }
           return;
         }
@@ -159,7 +158,6 @@ constructor(
 
     if (iconId === 'vehicle-icon' && rId) {
       const load = this.routeLoadMap.get(rId);
-      console.log(`[addMarker] rId=${rId} load=${load} resolvedIcon=${resolvedIcon}`);
     }
 
     if (map.getSource(sourceId)) {
@@ -286,23 +284,18 @@ constructor(
       },
 
       click: (e: any) => {
-        console.log(`🖱️ Vehicle clicked:`, { rId, layerId, event: e });
 
         // Select this route
         this.selectVehicle(map, rId);
         
         // Callback to parent component
         if (this.onVehicleSelected) {
-          console.log(`📞 Calling onVehicleSelected callback for: ${rId}`);
           this.onVehicleSelected(rId);
-        } else {
-          console.warn(`⚠️ No onVehicleSelected callback defined`);
         }
       }
     };
 
     // Add event listeners
-    console.log(`[route-drawing] Binding interact events for: ${layerId} rId=${rId}`);
     map.on('mouseenter', layerId, handlers.mouseenter);
     map.on('mousemove', layerId, handlers.mousemove);
     map.on('mouseleave', layerId, handlers.mouseleave);
@@ -316,19 +309,16 @@ constructor(
    * Select a vehicle and update its appearance
    */
   private selectVehicle(map: maplibregl.Map, rId: string) {
-    console.log(`🚗 Selecting vehicle: ${rId}`, { previousSelected: this.selectedRouteId });
     
     // Deselect previous vehicle
     if (this.selectedRouteId && this.selectedRouteId !== rId) {
       const prevLayerId = `layer-vehicle-${this.selectedRouteId}`;
-      console.log(`🔄 Deselecting previous vehicle: ${this.selectedRouteId}, layer: ${prevLayerId}`);
       this.setVehicleSelected(map, prevLayerId, false);
     }
 
     // Select new vehicle
     this.selectedRouteId = rId;
     const layerId = `layer-vehicle-${rId}`;
-    console.log(`✅ Selecting new vehicle: ${rId}, layer: ${layerId}`);
     this.setVehicleSelected(map, layerId, true);
   }
 
@@ -336,10 +326,8 @@ constructor(
    * Set vehicle visual state (selected/unselected)
    */
   private setVehicleSelected(map: maplibregl.Map, layerId: string, selected: boolean) {
-    console.log(`🎨 Setting vehicle state:`, { layerId, selected, layerExists: !!map.getLayer(layerId) });
     
     if (!map.getLayer(layerId)) {
-      console.warn(`⚠️ Layer ${layerId} not found on map`);
       return;
     }
 
@@ -360,9 +348,8 @@ constructor(
       const opacity = selected ? 1 : 0.8;
       map.setPaintProperty(layerId, 'icon-opacity', 1);
       
-      console.log(`✅ Successfully updated vehicle visual state:`, { layerId, iconImage, iconSize, opacity });
     } catch (error) {
-      console.error(`❌ Error updating vehicle visual state:`, error);
+      console.error(`Error updating vehicle visual state:`, error);
     }
   }
 
