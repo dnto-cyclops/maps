@@ -8,7 +8,7 @@ export const environment = {
   biUrl: 'https://bi.in-ova-bi.co',
   repUrl: 'https://reporting.in-ova-bi.co',
   colUrl: 'https://in-ova-bi.co',
-  routesUrl: 'https://demo-flota.in-ova.co/',
+  routesUrl: 'https://demo-flota.in-ova.co',
   colWebUrl: 'https://interactiva.in-ova-bi.co',
   logout: 'https://in-ova-bi.co/login',
   campaignApiUrl:'https://messaging-api.in-ova-bi.co/campaign/send-message',
