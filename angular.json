@@ -20,7 +20,8 @@
             "tsConfig": "tsconfig.app.json",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              "src/404.html"
             ],
             "styles": [
               "src/styles.css"
@@ -72,5 +73,8 @@
       }
     }
   },
-  "defaultProject": "maps"
+  "defaultProject": "maps",
+  "cli": {
+    "analytics": "5249ad34-14e2-490f-b5ef-6deb654f5fee"
+  }
 }
