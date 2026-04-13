@@ -63,7 +63,7 @@ const routes: Routes = [
       colUrl: environment.colUrl,
       biUrl: environment.biUrl,
       itUrl: environment.colWebUrl,
-      comUrl: environment.domine,
+      comUrl: environment.comUrl,
       current: NavServices.ROUTES,
       logout: environment.logout,
       routesUrl: environment.routesUrl,

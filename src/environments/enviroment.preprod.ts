@@ -10,6 +10,7 @@ export const environment = {
   colUrl: 'http://54.149.34.126:8050',
   routesUrl: 'https://demo-flota.in-ova.co',
   colWebUrl: 'http://54.149.34.126:8053',
+  comUrl: 'https://comunica.in-ova-bi.co',
   logout: 'http://54.149.34.126:8050/login',
   campaignApiUrl:'https://bm9lg3dm6a.execute-api.us-west-2.amazonaws.com/preprod/campaign/send-message',
   signalrUrl: 'https://chat.in-ova-bi.co/hubs/chat',
