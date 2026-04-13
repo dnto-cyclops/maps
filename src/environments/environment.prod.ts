@@ -14,7 +14,7 @@ export const environment = {
   logout: 'https://in-ova-bi.co/login',
   campaignApiUrl:'https://messaging-api.in-ova-bi.co/campaign/send-message',
   signalrUrl: 'https://chat.in-ova-bi.co/hubs/chat',
-  i18nBaseUrl: 'https://interactiva.backend-in-ova.co/i18n/com/',
+  i18nBaseUrl: 'https://interactiva.backend-in-ova.co/i18n/routes/',
   sipDomain: 'sip.in-ova.co',
   sipWssUrl: 'wss://sip.in-ova.co:5080'
 };

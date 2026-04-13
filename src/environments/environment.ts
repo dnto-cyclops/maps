@@ -14,7 +14,7 @@ export const environment = {
   logout: 'http://54.149.34.126:8050/login',
   campaignApiUrl:'https://bm9lg3dm6a.execute-api.us-west-2.amazonaws.com/preprod/campaign/send-message',
   signalrUrl: 'https://chat.in-ova-bi.co/hubs/chat',
-  i18nBaseUrl: 'http://54.149.34.126:9053/i18n/com/',
+  i18nBaseUrl: 'http://54.149.34.126:9053/i18n/routes/',
   sipDomain: 'sip.in-ova.co:5080',
   sipWssUrl: 'wss://sip.in-ova.co:5080'
 };
