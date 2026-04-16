@@ -9,6 +9,11 @@
 </head>
 <body>
   <script>
+    window.__pendingMessages = [];
+    window.addEventListener('message', function(e) {
+      window.__pendingMessages.push(e);
+    });
+
     (function(l) {
       if (l.search[1] === '/' ) {
         var decoded = l.search.slice(1).split('&').map(function(s) { 

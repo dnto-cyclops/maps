@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, NgZone, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
 import { UpdatesService } from '../../services/updates.service';
 import { RoutesService } from '../../services/routes.service';
 import { RouteCardData } from '../../components/cards/route-card.component';
@@ -21,7 +21,7 @@ import { ActivatedRoute } from '@angular/router';
   templateUrl: './route-map.component.html',
   styleUrls: ['./route-map.component.scss'],
 })
-export class RouteMapComponent implements OnInit, AfterViewInit {
+export class RouteMapComponent implements OnInit, AfterViewInit, OnDestroy {
 map: any;
 panelCollapsed = false;
 routeList: RouteCardData[] = [];
@@ -38,11 +38,15 @@ selectedRouteDetails: any = null;
 // store route geometry and markers by rId
 routes: { [rId: string]: RouteData } = {};
 sidebarCollapsed = false;
-
-// clustering configuration
-clusteringEnabled = true;
+  clusteringEnabled = true;
   private enabledRouteIds = new Set<string>();
   private hasFilterState = false;
+
+  private readonly resizeListener = () => {
+    if (this.map) {
+      this.map.resize();
+    }
+  };
 
 constructor(
   private us: UpdatesService, 
@@ -91,10 +95,12 @@ constructor(
   
   ngAfterViewInit() {
     this.map = this.mapService.initializeMap('map');
+    window.addEventListener('resize', this.resizeListener);
 
     this.map.on('load', async () => {
       await this.mapIconService.loadIcons(this.map);
       this.addColombiaOutline();
+      this.map.resize();
 
       const slugs = this.fruitIconService.getAllSlugs();
       await this.mapIconService.loadFruitIcons(this.map, slugs);
@@ -962,6 +968,13 @@ constructor(
    */
   togglePanel() {
     this.panelCollapsed = !this.panelCollapsed;
+    setTimeout(() => {
+      this.map?.resize();
+    }, 420);
+  }
+
+  ngOnDestroy() {
+    window.removeEventListener('resize', this.resizeListener);
   }
 
   private addColombiaOutline() {
