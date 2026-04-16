@@ -9,6 +9,11 @@
 </head>
 <body>
   <script>
+    window.__pendingMessages = [];
+    window.addEventListener('message', function(e) {
+      window.__pendingMessages.push(e);
+    });
+
     (function(l) {
       if (l.search[1] === '/' ) {
         var decoded = l.search.slice(1).split('&').map(function(s) { 
@@ -21,5 +26,5 @@
     }(window.location))
   </script>
   <app-root></app-root>
-<script src="runtime-es2015.4c727557157f5a223b37.js" type="module"></script><script src="runtime-es5.4c727557157f5a223b37.js" nomodule defer></script><script src="polyfills-es5.a5f28b3e5f868adc7225.js" nomodule defer></script><script src="polyfills-es2015.e91851e1498e75d3ad38.js" type="module"></script><script src="styles-es2015.4bba618cac97a3f005b1.js" type="module"></script><script src="styles-es5.4bba618cac97a3f005b1.js" nomodule defer></script><script src="main-es2015.b4c03f55e5502d5abee2.js" type="module"></script><script src="main-es5.b4c03f55e5502d5abee2.js" nomodule defer></script></body>
+<script src="runtime-es2015.70731aa3a3a3e4077b49.js" type="module"></script><script src="runtime-es5.70731aa3a3a3e4077b49.js" nomodule defer></script><script src="polyfills-es5.a5f28b3e5f868adc7225.js" nomodule defer></script><script src="polyfills-es2015.e91851e1498e75d3ad38.js" type="module"></script><script src="styles-es2015.4bba618cac97a3f005b1.js" type="module"></script><script src="styles-es5.4bba618cac97a3f005b1.js" nomodule defer></script><script src="main-es2015.b4c03f55e5502d5abee2.js" type="module"></script><script src="main-es5.b4c03f55e5502d5abee2.js" nomodule defer></script></body>
 </html>
