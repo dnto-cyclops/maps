@@ -23,10 +23,10 @@ export class GraphQLModule {
     private router: Router,
     private apolloHelper: ApolloHelperService
   ) {
-    const token = this.sessionService.getToken();
-    if (!token) {
-      this.sessionService.localLogout(true);
-    }
+    const token = this.sessionService.getToken() || '';
+    // if (!token) {
+    //   this.sessionService.localLogout(true);
+    // }
     this.apolloHelper.createApolloInova(
       {
         col: environment.colApi,
