@@ -9,8 +9,6 @@
 
 * {
     font-family: Montserrat;
-    font-weight: 600;
-    font-style: SemiBold;
     line-height: 100%;
     font-size: 16px;
     letter-spacing: 0%;
@@ -19,8 +17,17 @@
 }
 
 inova-nav {
-  background-color: #2d5a27;
+  background-color: transparent;
   display: block;
+}
+
+inova-nav .service-item {
+  font-size: 14px !important;
+  line-height: normal !important;
+}
+
+inova-nav .mat-toolbar {
+  line-height: normal !important;
 }
 
 html, body {
