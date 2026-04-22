@@ -24,9 +24,9 @@ export class GraphQLModule {
     private apolloHelper: ApolloHelperService
   ) {
     const token = this.sessionService.getToken() || '';
-    // if (!token) {
-    //   this.sessionService.localLogout(true);
-    // }
+    if (!token) {
+      this.sessionService.localLogout(true);
+    }
     this.apolloHelper.createApolloInova(
       {
         col: environment.colApi,

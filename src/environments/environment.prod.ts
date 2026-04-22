@@ -4,7 +4,7 @@ export const environment = {
   repApi: 'https://reporting.backend-in-ova.co/graphql',
   colWebApi: 'https://interactiva.backend-in-ova.co/graphql',
   comWsApi: 'wss://interactiva.backend-in-ova.co/ws/chat',
-  domine: 'https://in-ova-bi.co',
+  domine: 'https://demo-flota.in-ova.co',
   biUrl: 'https://bi.in-ova-bi.co',
   repUrl: 'https://reporting.in-ova-bi.co',
   colUrl: 'https://in-ova-bi.co',
