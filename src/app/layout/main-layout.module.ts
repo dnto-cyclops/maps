@@ -17,6 +17,7 @@ import { FormsModule } from '@angular/forms';
 import { UserLanguagePipe } from 'inova-front-core/helpers/pipes';
 import { AuthGuard, ServiceGuard } from 'inova-front-core/helpers/guards';
 import { TranslateModule } from '@ngx-translate/core';
+import { DashboardComponent } from '../views/dashboard/dashboard.component';
 
 const routes: Routes = [
   {
@@ -37,6 +38,12 @@ const routes: Routes = [
         data: { serviceRequired: 'rutas' },
         component: RoutesViewComponent,
       },
+      {
+        path: 'dashboard',
+        canActivate: [ServiceGuard],
+        data: { serviceRequired: 'rutas' },
+        component: DashboardComponent,
+      }
     ],
   },
 ];
@@ -50,7 +57,8 @@ const routes: Routes = [
     RoutePanelComponent,
     RouteCardComponent,
     RouteDetailsPanelComponent,
-    RouteSummaryOverlayComponent
+    RouteSummaryOverlayComponent,
+    DashboardComponent
   ],
   imports: [
     CommonModule,

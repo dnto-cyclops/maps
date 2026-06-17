@@ -9,7 +9,12 @@
     <img src="assets/icons/point.svg" class="sidebar-icon" [alt]="'sidebar.routes' | translate"/>
     <span class="sidebar-label" *ngIf="!sidebarCollapsed">{{ 'general.routes' | translate }}</span>
   </div>
-  
+
+  <div class="sidebar-item" routerLink="/dashboard" routerLinkActive="active">
+    <img src="assets/icons/dashboard.svg" class="sidebar-icon" [alt]="'sidebar.dashboard' | translate"/>
+    <span class="sidebar-label" *ngIf="!sidebarCollapsed">Dashboard</span>
+  </div>
+
   <div class="sidebar-footer">
     <button class="toggle-sidebar-btn" (click)="toggleSidebar()">
       <span class="arrow-icon" [class.rotated]="sidebarCollapsed">

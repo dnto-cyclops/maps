@@ -78,4 +78,10 @@ export class FruitIconService {
     const slug = this.resolveSlug(load);
     return slug ? `assets/icons/fruits/cards/${slug}.svg` : 'assets/icons/truck.svg';
   }
+
+  /** Colored-circle marker variant (white glyph on a tinted disc), used on maps and the dashboard. */
+  getMarkerIconPath(load: string | undefined | null): string {
+    const slug = this.resolveSlug(load);
+    return slug ? `assets/icons/fruits/${slug}.svg` : 'assets/icons/truck.svg';
+  }
 }
