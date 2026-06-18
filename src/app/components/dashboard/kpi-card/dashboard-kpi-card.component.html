@@ -1,0 +1,22 @@
+<div class="kpi-card" [class.alert]="kpi.alert">
+  <div class="kpi-top">
+    <span class="kpi-icon" [ngClass]="'icon-' + kpi.icon">
+      <ng-container [ngSwitch]="kpi.icon">
+        <img *ngSwitchCase="'trips'" src="assets/icons/dashboard/truck.svg" alt="Viajes" />
+        <img *ngSwitchCase="'weight'" src="assets/icons/dashboard/weight.svg" alt="Kg" />
+        <img *ngSwitchCase="'completed'" src="assets/icons/dashboard/check-circle.svg" alt="Completados" />
+        <img *ngSwitchCase="'time'" src="assets/icons/clock.svg" alt="Tiempo" />
+        <img *ngSwitchCase="'alert'" src="assets/icons/dashboard/warning.svg" alt="Incidencias" />
+      </ng-container>
+    </span>
+
+    <span class="kpi-trend" *ngIf="kpi.trend" [class.up]="kpi.trend.direction === 'up'" [class.down]="kpi.trend.direction === 'down'">
+      <img class="trend-icon" [src]="kpi.trend.direction === 'up' ? 'assets/icons/dashboard/trend-up.svg' : 'assets/icons/dashboard/trend-down.svg'" alt="" />
+      {{ kpi.trend.value }}
+    </span>
+    <span class="kpi-alert-tag" *ngIf="kpi.alert">ALERTA</span>
+  </div>
+
+  <div class="kpi-value">{{ kpi.value }}</div>
+  <div class="kpi-label">{{ kpi.label }}</div>
+</div>

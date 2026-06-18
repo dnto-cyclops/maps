@@ -1,0 +1,128 @@
+:host {
+  display: block;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.filter-by {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+
+  .filter-icon {
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+  }
+}
+
+.filter-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.field-label {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0f172a;
+  padding: 8px 36px 8px 14px;
+  min-width: 180px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    border-color: #cbd5e1;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #5e8f56;
+    box-shadow: 0 0 0 3px rgba(94, 143, 86, 0.15);
+  }
+}
+
+.chevron {
+  position: absolute;
+  right: 12px;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.date-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.filter-date {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0f172a;
+  padding: 8px 36px 8px 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    border-color: #cbd5e1;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #5e8f56;
+    box-shadow: 0 0 0 3px rgba(94, 143, 86, 0.15);
+  }
+
+  // Hide the native date picker indicator; we render our own calendar icon.
+  &::-webkit-calendar-picker-indicator {
+    position: absolute;
+    right: 0;
+    width: 32px;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.calendar {
+  position: absolute;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+@media (max-width: 600px) {
+  .filter-select {
+    min-width: 0;
+    flex: 1;
+  }
+}

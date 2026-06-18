@@ -1,0 +1,7 @@
+<section class="panel">
+  <div class="panel-head">
+    <h2 class="panel-title" [class.panel-title--narrow]="narrowTitle">{{ title }}</h2>
+    <ng-content select="[panel-action]"></ng-content>
+  </div>
+  <ng-content></ng-content>
+</section>

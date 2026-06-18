@@ -1,0 +1,32 @@
+<div class="filter-bar">
+  <span class="filter-by">
+    <img class="filter-icon" src="assets/icons/filter.svg" alt="" />
+    Filtrar por:
+  </span>
+
+  <div class="filter-field">
+    <label class="field-label">Fecha</label>
+    <div class="select-wrap">
+      <select
+        class="filter-select"
+        [ngModel]="filter.range"
+        (ngModelChange)="onRangeChange($event)"
+      >
+        <option *ngFor="let opt of rangeOptions" [value]="opt.value">{{ opt.label }}</option>
+      </select>
+      <img class="chevron" src="assets/icons/chevron-down.svg" alt="" />
+    </div>
+  </div>
+
+  <div class="filter-field">
+    <div class="date-wrap">
+      <input
+        class="filter-date"
+        type="date"
+        [ngModel]="filter.date"
+        (ngModelChange)="onDateChange($event)"
+      />
+      <img class="calendar" src="assets/icons/calendar.svg" alt="" />
+    </div>
+  </div>
+</div>

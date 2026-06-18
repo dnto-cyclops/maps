@@ -1,0 +1,14 @@
+<app-dashboard-panel [title]="title" [narrowTitle]="true">
+  <div panel-action class="range-toggle">
+    <button [class.active]="range === 'daily'" (click)="setRange('daily')">Diario</button>
+    <button [class.active]="range === 'weekly'" (click)="setRange('weekly')">Semanal</button>
+    <button [class.active]="range === 'monthly'" (click)="setRange('monthly')">Mensual</button>
+  </div>
+
+  <div class="chart">
+    <div class="chart-bar-wrap" *ngFor="let bar of bars">
+      <div class="chart-bar" [style.height.%]="barHeight(bar.value)" [style.background]="bar.color" [title]="bar.value + ' kg'"></div>
+      <span class="chart-label">{{ bar.label }}</span>
+    </div>
+  </div>
+</app-dashboard-panel>

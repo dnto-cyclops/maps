@@ -1,53 +1,27 @@
-import { Component, OnInit } from '@angular/core';
-import { FruitIconService } from '../../services/fruit-icon.service';
+import { Component } from '@angular/core';
+import {
+  DashboardFilter,
+  DashboardKpi,
+  MovementRow,
+  ProductWeight,
+  ProviderRow,
+  TrendData,
+  TrendRange
+} from '../../components/dashboard/dashboard.models';
 
-export interface DashboardKpi {
-  key: string;
-  label: string;
-  value: string;
-  icon: 'trips' | 'weight' | 'completed' | 'time' | 'alert';
-  trend?: { value: string; direction: 'up' | 'down' };
-  alert?: boolean;
-}
-
-export interface ProductWeight {
-  product: string;
-  iconKey?: string;
-  kg: number;
-}
-
-export interface TrendBar {
-  label: string;
-  value: number;
-  /** Fill color for the bar (the design uses a varied green scale rather than a uniform fill). */
-  color: string;
-}
-
-export interface ProviderRow {
-  provider: string;
-  kg: string;
-  trips: number;
-}
-
-export interface MovementRow {
-  time: string;
-  product: string;
-  iconKey?: string;
-  kg: string;
-  km: string;
-  provider: string;
-  destination: string;
-  status: 'delivered' | 'en_route';
-}
-
-type TrendRange = 'daily' | 'weekly' | 'monthly';
+type MovementStatus = MovementRow['status'];
 
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent {
+  filter: DashboardFilter = {
+    range: 'all',
+    date: new Date().toISOString().slice(0, 10)
+  };
+
   kpis: DashboardKpi[] = [
     { key: 'trips', label: 'Viajes Totales', value: '142', icon: 'trips', trend: { value: '12%', direction: 'up' } },
     { key: 'weight', label: 'Kg Transportadas', value: '2,450', icon: 'weight', trend: { value: '5%', direction: 'down' } },
@@ -66,7 +40,7 @@ export class DashboardComponent implements OnInit {
 
   trendRange: TrendRange = 'daily';
 
-  private trendData: Record<TrendRange, TrendBar[]> = {
+  trendData: TrendData = {
     daily: [
       { label: 'Lun', value: 420, color: '#E2E9DE' },
       { label: 'Mar', value: 510, color: '#C7D6C1' },
@@ -106,32 +80,25 @@ export class DashboardComponent implements OnInit {
     { time: '08:22 AM', product: 'Tomate de árbol', iconKey: 'tomate de árbol', kg: '25.0 kg', km: '260 km', provider: 'Frutas Tropicales', destination: 'Planta Malambo', status: 'delivered' }
   ];
 
-
-  constructor(private fruitIconService: FruitIconService) {}
-
-  ngOnInit() {}
-
-  get trendBars(): TrendBar[] {
-    return this.trendData[this.trendRange];
+  onFilterChange(filter: DashboardFilter) {
+    this.filter = filter;
+    // Data is currently static mock; re-query KPIs / charts / tables here once
+    // the dashboard is wired to the maps REST API.
   }
 
-  get maxTrendValue(): number {
-    return Math.max(...this.trendBars.map(b => b.value), 1);
-  }
-
-  setTrendRange(range: TrendRange) {
-    this.trendRange = range;
-  }
-
-  barHeight(value: number): number {
-    return Math.round((value / this.maxTrendValue) * 100);
-  }
-
-  fruitIcon(product: string): string {
-    return this.fruitIconService.getMarkerIconPath(product);
-  }
-
-  statusLabel(status: MovementRow['status']): string {
+  statusLabel(status: MovementStatus): string {
     return status === 'delivered' ? 'ENTREGADO' : 'EN RUTA';
+  }
+
+  onProvidersViewAll() {
+    // TODO: navigate to the full providers report once available.
+  }
+
+  onMovementsFilter() {
+    // TODO: open movements filter once wired to the maps REST API.
+  }
+
+  onMovementsDownload() {
+    // TODO: export recent movements once wired to the maps REST API.
   }
 }

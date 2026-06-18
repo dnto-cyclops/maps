@@ -1,0 +1,51 @@
+// Shared table styling for the dashboard data tables (providers, movements).
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  td {
+    font-size: 13px;
+    color: #334155;
+    padding: 14px 12px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover {
+    background: #f8fafc;
+  }
+
+  .strong {
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .muted {
+    color: #64748b;
+  }
+
+  &.movements {
+    th:first-child,
+    td:first-child {
+      padding-left: 12px;
+    }
+
+    @media (max-width: 1024px) {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+  }
+}

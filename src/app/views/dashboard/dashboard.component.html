@@ -1,70 +1,30 @@
 <div class="dashboard">
   <h1 class="page-title">Dashboard</h1>
 
+  <app-dashboard-filter-bar
+    [filter]="filter"
+    (filterChange)="onFilterChange($event)"
+  ></app-dashboard-filter-bar>
+
   <div class="kpi-grid">
-    <div class="kpi-card" *ngFor="let kpi of kpis" [class.alert]="kpi.alert">
-      <div class="kpi-top">
-        <span class="kpi-icon" [ngClass]="'icon-' + kpi.icon">
-          <ng-container [ngSwitch]="kpi.icon">
-            <img *ngSwitchCase="'trips'" src="assets/icons/dashboard/truck.svg" alt="Viajes" />
-            <img *ngSwitchCase="'weight'" src="assets/icons/dashboard/weight.svg" alt="Kg" />
-            <img *ngSwitchCase="'completed'" src="assets/icons/dashboard/check-circle.svg" alt="Completados" />
-            <img *ngSwitchCase="'time'" src="assets/icons/clock.svg" alt="Tiempo" />
-            <img *ngSwitchCase="'alert'" src="assets/icons/dashboard/warning.svg" alt="Incidencias" />
-          </ng-container>
-        </span>
-
-        <span class="kpi-trend" *ngIf="kpi.trend" [class.up]="kpi.trend.direction === 'up'" [class.down]="kpi.trend.direction === 'down'">
-          <img class="trend-icon" [src]="kpi.trend.direction === 'up' ? 'assets/icons/dashboard/trend-up.svg' : 'assets/icons/dashboard/trend-down.svg'" alt="" />
-          {{ kpi.trend.value }}
-        </span>
-        <span class="kpi-alert-tag" *ngIf="kpi.alert">ALERTA</span>
-      </div>
-
-      <div class="kpi-value">{{ kpi.value }}</div>
-      <div class="kpi-label">{{ kpi.label }}</div>
-    </div>
+    <app-dashboard-kpi-card *ngFor="let kpi of kpis" [kpi]="kpi"></app-dashboard-kpi-card>
   </div>
-  
 
   <div class="mid-grid">
-    <section class="panel">
-      <h2 class="panel-title">Kilogramos transportados durante el dia</h2>
+    <app-dashboard-panel title="Kilogramos transportados durante el dia">
       <ul class="product-list">
         <li class="product-row" *ngFor="let p of productWeights">
-          <span class="product-name">
-            <img class="product-icon" [src]="fruitIcon(p.iconKey || p.product)" [alt]="p.product" />
-            {{ p.product }}
-          </span>
+          <app-product-tag [product]="p.product" [iconKey]="p.iconKey"></app-product-tag>
           <span class="product-kg">{{ p.kg }} kg</span>
         </li>
       </ul>
-    </section>
+    </app-dashboard-panel>
 
-    <section class="panel">
-      <div class="panel-head">
-        <h2 class="panel-title">Tendencia de Kilogramos Movilizadas</h2>
-        <div class="range-toggle">
-          <button [class.active]="trendRange === 'daily'" (click)="setTrendRange('daily')">Diario</button>
-          <button [class.active]="trendRange === 'weekly'" (click)="setTrendRange('weekly')">Semanal</button>
-          <button [class.active]="trendRange === 'monthly'" (click)="setTrendRange('monthly')">Mensual</button>
-        </div>
-      </div>
-
-      <div class="chart">
-        <div class="chart-bar-wrap" *ngFor="let bar of trendBars">
-          <div class="chart-bar" [style.height.%]="barHeight(bar.value)" [style.background]="bar.color" [title]="bar.value + ' kg'"></div>
-          <span class="chart-label">{{ bar.label }}</span>
-        </div>
-      </div>
-    </section>
+    <app-trend-chart [data]="trendData" [range]="trendRange"></app-trend-chart>
   </div>
 
-  <section class="panel">
-    <div class="panel-head">
-      <h2 class="panel-title">Top Proveedores</h2>
-      <a class="link" href="javascript:void(0)">Ver todo</a>
-    </div>
+  <app-dashboard-panel title="Top Proveedores">
+    <a panel-action class="link" href="javascript:void(0)" (click)="onProvidersViewAll()">Ver todo</a>
     <table class="data-table">
       <thead>
         <tr>
@@ -81,24 +41,22 @@
         </tr>
       </tbody>
     </table>
-  </section>
+  </app-dashboard-panel>
 
-  <section class="panel">
-    <div class="panel-head">
-      <h2 class="panel-title">Movimientos Recientes</h2>
-      <div class="panel-actions">
-        <button class="icon-btn" title="Filtrar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
-          </svg>
-        </button>
-        <button class="icon-btn" title="Descargar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>
-          </svg>
-        </button>
-      </div>
+  <app-dashboard-panel title="Movimientos Recientes">
+    <div panel-action class="panel-actions">
+      <button class="icon-btn" title="Filtrar" (click)="onMovementsFilter()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+        </svg>
+      </button>
+      <button class="icon-btn" title="Descargar" (click)="onMovementsDownload()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>
+        </svg>
+      </button>
     </div>
+
     <table class="data-table movements">
       <thead>
         <tr>
@@ -114,12 +72,7 @@
       <tbody>
         <tr *ngFor="let m of recentMovements">
           <td class="muted">{{ m.time }}</td>
-          <td>
-            <span class="product-name">
-              <img class="product-icon" [src]="fruitIcon(m.iconKey || m.product)" [alt]="m.product" />
-              {{ m.product }}
-            </span>
-          </td>
+          <td><app-product-tag [product]="m.product" [iconKey]="m.iconKey"></app-product-tag></td>
           <td class="strong">{{ m.kg }}</td>
           <td class="muted">{{ m.km }}</td>
           <td>{{ m.provider }}</td>
@@ -132,5 +85,5 @@
         </tr>
       </tbody>
     </table>
-  </section>
+  </app-dashboard-panel>
 </div>

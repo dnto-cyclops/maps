@@ -18,6 +18,13 @@ import { UserLanguagePipe } from 'inova-front-core/helpers/pipes';
 import { AuthGuard, ServiceGuard } from 'inova-front-core/helpers/guards';
 import { TranslateModule } from '@ngx-translate/core';
 import { DashboardComponent } from '../views/dashboard/dashboard.component';
+import {
+  DashboardPanelComponent,
+  DashboardFilterBarComponent,
+  DashboardKpiCardComponent,
+  ProductTagComponent,
+  TrendChartComponent
+} from '../components';
 
 const routes: Routes = [
   {
@@ -58,7 +65,12 @@ const routes: Routes = [
     RouteCardComponent,
     RouteDetailsPanelComponent,
     RouteSummaryOverlayComponent,
-    DashboardComponent
+    DashboardComponent,
+    DashboardPanelComponent,
+    DashboardFilterBarComponent,
+    DashboardKpiCardComponent,
+    ProductTagComponent,
+    TrendChartComponent
   ],
   imports: [
     CommonModule,
